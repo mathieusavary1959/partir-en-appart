@@ -46,6 +46,8 @@ button:hover,.btn:hover{filter:brightness(1.2)}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;align-items:center}
 .note{background:#222222;border:1px solid var(--bord);border-left:4px solid var(--pale2);padding:10px 12px;color:var(--pale);margin:10px 0;font-size:14px}
 .alerte{background:#2b0d0f;border:1px solid var(--accent);color:#ffffff;padding:10px 12px;margin:10px 0;font-weight:600}
+.sync-bloc{background:#141417;border:1px solid var(--bord);border-radius:8px;padding:12px;margin:12px 0}
+.sync-bloc input[type="password"]{background:#0d0d0d;border:1px solid var(--bord);color:#ffffff;padding:8px;border-radius:4px}
 .okbox{background:#0f2415;border:1px solid var(--ok);color:#ffffff;padding:10px 12px;margin:10px 0}
 .demarche{background:#000000;border:1px solid var(--bord);padding:12px 14px;font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--pale);white-space:pre-wrap;margin:10px 0}
 .total-ligne{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bord);color:var(--pale)}
@@ -100,7 +102,23 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 30px;color:var(--pale2);fon
 <span class="sauvegarde" id="mention-sauvegarde">Sauvegardé automatiquement</span>
 <span class="sauvegarde" id="mention-export"></span>
 </div>
-<div class="alerte">Ton travail est sauvegardé dans CE navigateur seulement, sur CET appareil. Il ne te suit pas d'un appareil à l'autre. Si tu continues sur un autre appareil (Chromebook de l'école, ordinateur de la maison), clique « Exporter mon dossier » ici, garde le fichier, puis clique « Importer un dossier » sur l'autre appareil. Fais-le à la fin de chaque séance : c'est ta copie de sécurité.</div>
+<div class="alerte">Relie ton dossier avec ton code de projet (juste en dessous) : il te suivra sur tous tes appareils. Sans code relié, ton travail reste seulement dans CE navigateur, sur CET appareil. Dans tous les cas, exporte ton fichier à la fin de chaque séance : c'est ta copie de sécurité.</div>
+<div class="sync-bloc">
+<h3 style="margin:0 0 6px">Synchronisation : ton dossier te suit partout</h3>
+<p class="petit" style="margin:0 0 8px">Choisis un code de projet personnel (6 caractères ou plus, un mot que toi seul connais). Avec le MÊME code sur n'importe quel appareil, ton dossier se récupère et se met à jour tout seul. Ne le dis à personne : c'est la clé de ton dossier. Sur un nouvel appareil, écris ton nom, ton groupe et ton numéro de profil exactement comme la première fois, puis ton code.</p>
+<div class="rangee">
+<label>Mon code de projet personnel <input type="password" id="sync-code" autocomplete="new-password" placeholder="6 caractères ou plus"></label>
+<button type="button" id="btn-sync-relier">Relier mon dossier</button>
+</div>
+<span class="sauvegarde" id="mention-synchro">Synchronisation non activée.</span>
+<div id="sync-conflit" class="cache">
+<p class="petit">Un dossier différent existe déjà en ligne pour ce code. Lequel veux-tu garder ?</p>
+<div class="actions">
+<button type="button" id="btn-sync-distant">Utiliser le dossier en ligne</button>
+<button type="button" class="secondaire" id="btn-sync-ecraser">Écraser avec celui de cet appareil</button>
+</div>
+</div>
+</div>
 <div class="actions"><button type="button" class="btn-correction" id="btn-mode-correction">Mode correction - Enseignant</button><span class="petit">Section barrée : réservée à l'enseignant, code requis pour l'ouvrir.</span></div>
 </div></section>
 
@@ -507,6 +525,7 @@ function sauvegarder(){
     var h = new Date(); var hh = String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+":"+String(h.getSeconds()).padStart(2,"0");
     el("mention-sauvegarde").textContent = "Sauvegardé automatiquement à " + hh;
     majMentionExport();
+    planifierPushSync();
   }catch(e){}
 }
 function majMentionExport(){
@@ -518,6 +537,94 @@ function majMentionExport(){
     if(exp && exp >= mod){ m.textContent = "Fichier exporté, à jour."; m.style.color = "var(--ok)"; }
     else if(mod){ m.textContent = "Changements pas encore exportés : exporte ton fichier à la fin de ta séance, surtout si tu changes d'appareil."; m.style.color = "var(--warn)"; }
     else { m.textContent = ""; }
+  }catch(e){}
+}
+/* ===== Synchronisation en ligne (Supabase, acces par fonctions appart_*) ===== */
+var CONFIG_SYNC = { url: "https://pixbjedmpvvjqswltzkq.supabase.co", cleAnon: "sb_publishable_BK--loF-ncwrGwvCAMkUEw_Nut-mkz9" };
+var BackendSync = {
+  configure: function(){ return CONFIG_SYNC.cleAnon.indexOf("A_REMPLIR") === -1; },
+  appel: function(fonction, corps){
+    return fetch(CONFIG_SYNC.url + "/rest/v1/rpc/" + fonction, {
+      method: "POST",
+      headers: { "apikey": CONFIG_SYNC.cleAnon, "Authorization": "Bearer " + CONFIG_SYNC.cleAnon, "Content-Type": "application/json" },
+      body: JSON.stringify(corps)
+    }).then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); });
+  },
+  charger: function(cle){ return this.appel("appart_charger", { p_cle: cle }); },
+  sauvegarder: function(cle, dossierSync, majIso){ return this.appel("appart_sauvegarder", { p_cle: cle, p_dossier: dossierSync, p_maj_client: majIso }); }
+};
+var Synchro = { cle: null, horloge: null, delaiPush: 3000, enAttente: null };
+function majMentionSynchro(texte, couleur){ var m = el("mention-synchro"); if(!m) return; m.textContent = texte; m.style.color = couleur || ""; }
+function horlogeTexte(){ var h = new Date(); return String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+":"+String(h.getSeconds()).padStart(2,"0"); }
+function groupeNormalise(){ var chiffres = (dossier.eleve.groupe || "").replace(/[^0-9]/g, ""); return chiffres || slugNom(dossier.eleve.groupe || ""); }
+function calculerCleSync(code){
+  var codeN = (code || "").trim().toLowerCase();
+  return sha256Hex("partir-appart|" + groupeNormalise() + "|" + (dossier.eleve.profilNumero || "X") + "|" + codeN);
+}
+function dossierPourSync(){ var copie = JSON.parse(JSON.stringify(dossier)); delete copie.totaux; delete copie.totauxStockes; return copie; }
+function activerSynchro(cle){
+  Synchro.cle = cle;
+  try{ localStorage.setItem(cleSauvegarde() + "-sync", JSON.stringify({ cle: cle })); }catch(e){}
+}
+function pousserSync(){
+  if(!Synchro.cle) return;
+  var modifie = 0; try{ modifie = Number(localStorage.getItem(cleSauvegarde() + "-modifie") || 0); }catch(e){}
+  var majIso = new Date(modifie || Date.now()).toISOString();
+  BackendSync.sauvegarder(Synchro.cle, dossierPourSync(), majIso).then(function(){
+    majMentionSynchro("Synchronisé à " + horlogeTexte() + ".", "var(--ok)");
+  }).catch(function(){
+    majMentionSynchro("Pas de connexion : ton travail reste sauvegardé sur cet appareil, la synchronisation reprendra toute seule.", "var(--warn)");
+  });
+}
+function planifierPushSync(){
+  if(!Synchro.cle) return;
+  if(Synchro.horloge) clearTimeout(Synchro.horloge);
+  Synchro.horloge = setTimeout(pousserSync, Synchro.delaiPush);
+}
+function adopterDossierDistant(distant){
+  dossier = fusionner(dossierVide(), distant);
+  construireS2(); construireS3(); construireS5();
+  sauvegarder();
+  remplirFormulaire();
+  majTout();
+}
+function relierSync(){
+  majTout();
+  el("sync-conflit").className = "cache"; Synchro.enAttente = null;
+  if(!BackendSync.configure()){ majMentionSynchro("La synchronisation n'est pas encore configurée sur ce site.", "var(--danger)"); return; }
+  if(!dossier.eleve.profilNumero){ majMentionSynchro("Choisis d'abord ton numéro de profil ci-dessus.", "var(--danger)"); return; }
+  if(!(dossier.eleve.groupe || "").trim()){ majMentionSynchro("Écris d'abord ton groupe ci-dessus (ex. 502).", "var(--danger)"); return; }
+  var code = el("sync-code").value;
+  if((code || "").trim().length < 6){ majMentionSynchro("Ton code doit avoir au moins 6 caractères.", "var(--danger)"); return; }
+  var cle = calculerCleSync(code);
+  majMentionSynchro("Vérification en cours...", "");
+  BackendSync.charger(cle).then(function(res){
+    if(!res || !res.dossier){ activerSynchro(cle); pousserSync(); majMentionSynchro("Synchronisation activée : ton dossier est maintenant en ligne.", "var(--ok)"); return; }
+    if(JSON.stringify(dossierPourSync()) === JSON.stringify(res.dossier)){ activerSynchro(cle); majMentionSynchro("Dossier déjà synchronisé, rien à faire.", "var(--ok)"); return; }
+    Synchro.enAttente = { cle: cle, distant: res.dossier };
+    el("sync-conflit").className = "";
+    majMentionSynchro("Un dossier différent existe en ligne pour ce code : choisis lequel garder, juste en dessous.", "var(--warn)");
+  }).catch(function(){ majMentionSynchro("Connexion impossible pour le moment. Réessaie plus tard, ton travail reste sur cet appareil.", "var(--danger)"); });
+}
+function reprendreSynchroAuto(){
+  try{
+    var brut = localStorage.getItem(cleSauvegarde() + "-sync");
+    if(!brut) return;
+    var prefs = JSON.parse(brut);
+    if(!prefs || !prefs.cle || !BackendSync.configure()) return;
+    Synchro.cle = prefs.cle;
+    BackendSync.charger(prefs.cle).then(function(res){
+      if(!res || !res.dossier){ pousserSync(); return; }
+      var modifieLocal = 0; try{ modifieLocal = Number(localStorage.getItem(cleSauvegarde() + "-modifie") || 0); }catch(e){}
+      var majDistant = res.maj_client ? new Date(res.maj_client).getTime() : 0;
+      if(majDistant > modifieLocal && JSON.stringify(dossierPourSync()) !== JSON.stringify(res.dossier)){
+        adopterDossierDistant(res.dossier);
+        majMentionSynchro("Ton dossier le plus récent a été récupéré en ligne.", "var(--ok)");
+      } else {
+        majMentionSynchro("Synchronisation active, dossier à jour.", "var(--ok)");
+        if(modifieLocal > majDistant) pousserSync();
+      }
+    }).catch(function(){ majMentionSynchro("Synchronisation active, mais pas de connexion pour le moment.", "var(--warn)"); });
   }catch(e){}
 }
 function sauvegarderDiffere(){ if(horlogeSauvegarde) clearTimeout(horlogeSauvegarde); horlogeSauvegarde = setTimeout(sauvegarder, 250); }
@@ -942,6 +1049,24 @@ function tenterDeverrouillage(){
   remplirFormulaire();
   majTout();
   el("btn-exporter").addEventListener("click", function(){ majTout(); exporterDossier(); });
+  el("btn-sync-relier").addEventListener("click", relierSync);
+  el("btn-sync-distant").addEventListener("click", function(){
+    if(!Synchro.enAttente) return;
+    var en = Synchro.enAttente; Synchro.enAttente = null;
+    el("sync-conflit").className = "cache";
+    activerSynchro(en.cle);
+    adopterDossierDistant(en.distant);
+    majMentionSynchro("Dossier en ligne récupéré. La synchronisation est active.", "var(--ok)");
+  });
+  el("btn-sync-ecraser").addEventListener("click", function(){
+    if(!Synchro.enAttente) return;
+    var en = Synchro.enAttente; Synchro.enAttente = null;
+    el("sync-conflit").className = "cache";
+    activerSynchro(en.cle);
+    pousserSync();
+    majMentionSynchro("Dossier de cet appareil envoyé en ligne. La synchronisation est active.", "var(--ok)");
+  });
+  reprendreSynchroAuto();
   el("fichier-import").addEventListener("change", function(ev){
     var f = ev.target.files[0]; if(!f) return;
     var lecteur = new FileReader();
@@ -951,7 +1076,8 @@ function tenterDeverrouillage(){
   function lierChampsSimplesMenus(){ /* les zones dynamiques sont reliees a leur construction */ }
   el("btn-effacer").addEventListener("click", function(){
     if(!confirm("Tout effacer ? Cette action vide le formulaire et la sauvegarde automatique de ce dossier.")) return;
-    try{ var cle = cleSauvegarde(); localStorage.removeItem(cle); localStorage.removeItem("partir-appart-dernier"); }catch(e){}
+    try{ var cle = cleSauvegarde(); localStorage.removeItem(cle); localStorage.removeItem("partir-appart-dernier"); localStorage.removeItem(cle + "-sync"); localStorage.removeItem(cle + "-modifie"); localStorage.removeItem(cle + "-exporte"); }catch(e){}
+    Synchro.cle = null; majMentionSynchro("Synchronisation non activée.", "");
     dossier = dossierVide(); construireS2(); construireS3(); construireS5(); remplirFormulaire(); majTout();
   });
   el("btn-mode-correction").addEventListener("click", function(){ var p = el("panneau-correction"); p.style.display="block"; if(p.scrollIntoView) p.scrollIntoView({behavior:"smooth"}); if(!correctionDeverrouillee){ var champ = el("code-enseignant"); if(champ) champ.focus(); } });
