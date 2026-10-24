@@ -95,14 +95,10 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 30px;color:var(--pale2);fon
 </div>
 <div id="profil-carte"></div>
 <div class="actions">
-<button type="button" id="btn-exporter">Exporter mon dossier</button>
-<label class="btn secondaire" for="fichier-import">Importer un dossier</label>
-<input type="file" id="fichier-import" accept=".json,application/json" class="cache">
 <button type="button" class="secondaire" id="btn-effacer">Tout effacer</button>
 <span class="sauvegarde" id="mention-sauvegarde">Sauvegardé automatiquement</span>
-<span class="sauvegarde" id="mention-export"></span>
 </div>
-<div class="alerte">Relie ton dossier avec ton code de projet (juste en dessous) : il te suivra sur tous tes appareils. Sans code relié, ton travail reste seulement dans CE navigateur, sur CET appareil. Dans tous les cas, exporte ton fichier à la fin de chaque séance : c'est ta copie de sécurité.</div>
+<div class="alerte">Relie ton dossier avec ton code de projet (juste en dessous) : il te suivra sur tous tes appareils. Sans code relié, ton travail reste seulement dans CE navigateur, sur CET appareil, et tu pourrais le perdre en changeant d'appareil.</div>
 <div class="sync-bloc">
 <h3 style="margin:0 0 6px">Synchronisation : ton dossier te suit partout</h3>
 <p class="petit" style="margin:0 0 8px">Choisis un code de projet personnel (6 caractères ou plus, un mot que toi seul connais). Avec le MÊME code sur n'importe quel appareil, ton dossier se récupère et se met à jour tout seul. Ne le dis à personne : c'est la clé de ton dossier. Sur un nouvel appareil, écris ton nom, ton groupe et ton numéro de profil exactement comme la première fois, puis ton code.</p>
@@ -269,7 +265,16 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 30px;color:var(--pale2);fon
 </div>
 </div></details></section>
 </main>
-<footer>Partir en appart! - Éducation financière, secondaire 5 - Données sauvegardées uniquement dans ce navigateur (localStorage).</footer>
+<section class="carte"><div class="corps">
+<h2 style="margin-top:0">Remise du projet</h2>
+<p>Ne clique ce bouton qu'à la fin du projet, quand ton enseignant te le demande. Ton dossier complet se télécharge en un seul fichier. Dépose ensuite ce fichier dans Classroom : c'est ta remise.</p>
+<div class="actions">
+<button type="button" id="btn-remettre">Remettre mon dossier</button>
+<span class="sauvegarde" id="mention-remise"></span>
+</div>
+</div></section>
+
+<footer>Partir en appart! - Éducation financière, secondaire 5.</footer>
 
 <script id="moteur">
 "use strict";
@@ -524,19 +529,7 @@ function sauvegarder(){
     if(brut !== ancien) localStorage.setItem(cle + "-modifie", String(Date.now()));
     var h = new Date(); var hh = String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+":"+String(h.getSeconds()).padStart(2,"0");
     el("mention-sauvegarde").textContent = "Sauvegardé automatiquement à " + hh;
-    majMentionExport();
     planifierPushSync();
-  }catch(e){}
-}
-function majMentionExport(){
-  var m = el("mention-export"); if(!m) return;
-  try{
-    var cle = cleSauvegarde();
-    var mod = Number(localStorage.getItem(cle + "-modifie") || 0);
-    var exp = Number(localStorage.getItem(cle + "-exporte") || 0);
-    if(exp && exp >= mod){ m.textContent = "Fichier exporté, à jour."; m.style.color = "var(--ok)"; }
-    else if(mod){ m.textContent = "Changements pas encore exportés : exporte ton fichier à la fin de ta séance, surtout si tu changes d'appareil."; m.style.color = "var(--warn)"; }
-    else { m.textContent = ""; }
   }catch(e){}
 }
 /* ===== Synchronisation en ligne (Supabase, acces par fonctions appart_*) ===== */
@@ -926,8 +919,6 @@ function exporterDossier(source, totauxPrecalcules){
   var nomFichier = "appart-profil-" + String(dossier.eleve.profilNumero||"XX").padStart(2,"0") + "-" + slugNom(dossier.eleve.nom) + ".json";
   var blob = new Blob([JSON.stringify(copie, null, 2)], {type:"application/json"});
   var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nomFichier; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
-  try{ localStorage.setItem(cleSauvegarde() + "-exporte", String(Date.now())); }catch(e){}
-  majMentionExport();
 }
 // Mode correction
 function afficherCorrection(importe){
@@ -1048,7 +1039,10 @@ function tenterDeverrouillage(){
   lierChampsSimples();
   remplirFormulaire();
   majTout();
-  el("btn-exporter").addEventListener("click", function(){ majTout(); exporterDossier(); });
+  el("btn-remettre").addEventListener("click", function(){
+    majTout(); exporterDossier();
+    var m = el("mention-remise"); if(m){ m.textContent = "Ton fichier vient d'être téléchargé. Dépose-le dans Classroom, c'est ta remise."; m.style.color = "var(--ok)"; }
+  });
   el("btn-sync-relier").addEventListener("click", relierSync);
   el("btn-sync-distant").addEventListener("click", function(){
     if(!Synchro.enAttente) return;
@@ -1067,13 +1061,6 @@ function tenterDeverrouillage(){
     majMentionSynchro("Dossier de cet appareil envoyé en ligne. La synchronisation est active.", "var(--ok)");
   });
   reprendreSynchroAuto();
-  el("fichier-import").addEventListener("change", function(ev){
-    var f = ev.target.files[0]; if(!f) return;
-    var lecteur = new FileReader();
-    lecteur.onload = function(){ try{ var d = JSON.parse(lecteur.result); dossier = fusionner(dossierVide(), d); construireS2(); construireS3(); construireS5(); lierChampsSimplesMenus(); remplirFormulaire(); majTout(); alert("Dossier importé."); }catch(e){ alert("Fichier invalide : " + e.message); } };
-    lecteur.readAsText(f); ev.target.value="";
-  });
-  function lierChampsSimplesMenus(){ /* les zones dynamiques sont reliees a leur construction */ }
   el("btn-effacer").addEventListener("click", function(){
     if(!confirm("Tout effacer ? Cette action vide le formulaire et la sauvegarde automatique de ce dossier.")) return;
     try{ var cle = cleSauvegarde(); localStorage.removeItem(cle); localStorage.removeItem("partir-appart-dernier"); localStorage.removeItem(cle + "-sync"); localStorage.removeItem(cle + "-modifie"); localStorage.removeItem(cle + "-exporte"); }catch(e){}
