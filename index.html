@@ -98,7 +98,9 @@ footer{max-width:1100px;margin:0 auto;padding:0 20px 30px;color:var(--pale2);fon
 <input type="file" id="fichier-import" accept=".json,application/json" class="cache">
 <button type="button" class="secondaire" id="btn-effacer">Tout effacer</button>
 <span class="sauvegarde" id="mention-sauvegarde">Sauvegardé automatiquement</span>
+<span class="sauvegarde" id="mention-export"></span>
 </div>
+<div class="alerte">Ton travail est sauvegardé dans CE navigateur seulement, sur CET appareil. Il ne te suit pas d'un appareil à l'autre. Si tu continues sur un autre appareil (Chromebook de l'école, ordinateur de la maison), clique « Exporter mon dossier » ici, garde le fichier, puis clique « Importer un dossier » sur l'autre appareil. Fais-le à la fin de chaque séance : c'est ta copie de sécurité.</div>
 <div class="actions"><button type="button" class="btn-correction" id="btn-mode-correction">Mode correction - Enseignant</button><span class="petit">Section barrée : réservée à l'enseignant, code requis pour l'ouvrir.</span></div>
 </div></section>
 
@@ -497,10 +499,25 @@ var horlogeSauvegarde = null;
 function sauvegarder(){
   try{
     var cle = cleSauvegarde();
-    localStorage.setItem(cle, JSON.stringify(dossier));
+    var brut = JSON.stringify(dossier);
+    var ancien = localStorage.getItem(cle);
+    localStorage.setItem(cle, brut);
     localStorage.setItem("partir-appart-dernier", cle);
+    if(brut !== ancien) localStorage.setItem(cle + "-modifie", String(Date.now()));
     var h = new Date(); var hh = String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+":"+String(h.getSeconds()).padStart(2,"0");
     el("mention-sauvegarde").textContent = "Sauvegardé automatiquement à " + hh;
+    majMentionExport();
+  }catch(e){}
+}
+function majMentionExport(){
+  var m = el("mention-export"); if(!m) return;
+  try{
+    var cle = cleSauvegarde();
+    var mod = Number(localStorage.getItem(cle + "-modifie") || 0);
+    var exp = Number(localStorage.getItem(cle + "-exporte") || 0);
+    if(exp && exp >= mod){ m.textContent = "Fichier exporté, à jour."; m.style.color = "var(--ok)"; }
+    else if(mod){ m.textContent = "Changements pas encore exportés : exporte ton fichier à la fin de ta séance, surtout si tu changes d'appareil."; m.style.color = "var(--warn)"; }
+    else { m.textContent = ""; }
   }catch(e){}
 }
 function sauvegarderDiffere(){ if(horlogeSauvegarde) clearTimeout(horlogeSauvegarde); horlogeSauvegarde = setTimeout(sauvegarder, 250); }
@@ -802,6 +819,8 @@ function exporterDossier(source, totauxPrecalcules){
   var nomFichier = "appart-profil-" + String(dossier.eleve.profilNumero||"XX").padStart(2,"0") + "-" + slugNom(dossier.eleve.nom) + ".json";
   var blob = new Blob([JSON.stringify(copie, null, 2)], {type:"application/json"});
   var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nomFichier; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  try{ localStorage.setItem(cleSauvegarde() + "-exporte", String(Date.now())); }catch(e){}
+  majMentionExport();
 }
 // Mode correction
 function afficherCorrection(importe){
