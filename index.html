@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partir en appart! - Outil de dépôt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--fond:#0d0d0d;--carte:#161616;--carte2:#1e1e1e;--bord:#333333;--accent:#E50914;--texte:#f5f5f5;--pale:#d6d6d6;--pale2:#bbbbbb;--ok:#3ecf6e;--warn:#ffb02e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fond);color:var(--texte);font-family:"Work Sans",system-ui,-apple-system,"Segoe UI",Arial,sans-serif;font-size:15px;line-height:1.45}
+h1,h2,h3,.bebas{font-family:"Bebas Neue","Work Sans",system-ui,sans-serif;letter-spacing:.04em;font-weight:400}
+header.entete{padding:22px 20px 8px;max-width:1100px;margin:0 auto}
+header.entete h1{font-size:44px;margin:0;color:#ffffff}
+header.entete h1 span{color:var(--accent)}
+header.entete p{color:var(--pale);margin:4px 0 0}
+.bandeau{position:sticky;top:0;z-index:50;background:#000000;border-bottom:3px solid var(--accent);padding:10px 16px}
+.bandeau-inner{max-width:1100px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px;align-items:stretch}
+.stat{flex:1 1 150px;background:var(--carte2);border:1px solid var(--bord);padding:8px 12px}
+.stat .lib{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--pale)}
+.stat .val{font-size:22px;font-weight:700;color:#ffffff}
+.stat .val.negatif{color:var(--accent)}
+main{max-width:1100px;margin:0 auto;padding:16px 20px 60px}
+.carte{background:var(--carte);border:1px solid var(--bord);border-left:4px solid var(--accent);margin:0 0 18px;padding:0}
+.carte>details{padding:0}
+.carte summary{cursor:pointer;padding:14px 18px;font-family:"Bebas Neue",sans-serif;font-size:26px;letter-spacing:.04em;color:#ffffff;list-style:none}
+.carte summary::-webkit-details-marker{display:none}
+.carte summary:hover{color:var(--accent)}
+.corps{padding:4px 18px 18px;border-top:1px solid var(--bord)}
+label{display:block;font-size:13px;color:var(--pale);margin:10px 0 4px;font-weight:600}
+input[type=text],input[type=number],select,textarea{width:100%;background:#222222;border:1px solid #444444;color:#ffffff;padding:8px 10px;font-family:inherit;font-size:15px;border-radius:2px}
+textarea{min-height:80px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:0}
+.grille{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.grille2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+table{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px}
+th,td{border:1px solid var(--bord);padding:6px 8px;text-align:left;vertical-align:top}
+th{background:#222222;color:#ffffff;font-weight:600}
+td input,td select{padding:5px 6px;font-size:14px}
+button,.btn{background:var(--accent);color:#ffffff;border:none;padding:9px 16px;font-family:inherit;font-weight:700;cursor:pointer;font-size:14px;border-radius:2px;display:inline-block}
+button.secondaire,.btn.secondaire{background:#2a2a2a;border:1px solid #555555;color:#ffffff}
+button:hover,.btn:hover{filter:brightness(1.2)}
+.btn-correction{background:var(--accent);font-size:16px;padding:12px 22px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0;align-items:center}
+.note{background:#222222;border:1px solid var(--bord);border-left:4px solid var(--pale2);padding:10px 12px;color:var(--pale);margin:10px 0;font-size:14px}
+.alerte{background:#2b0d0f;border:1px solid var(--accent);color:#ffffff;padding:10px 12px;margin:10px 0;font-weight:600}
+.okbox{background:#0f2415;border:1px solid var(--ok);color:#ffffff;padding:10px 12px;margin:10px 0}
+.demarche{background:#000000;border:1px solid var(--bord);padding:12px 14px;font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--pale);white-space:pre-wrap;margin:10px 0}
+.total-ligne{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--bord);color:var(--pale)}
+.total-ligne strong{color:#ffffff}
+.total-ligne.grand{font-size:18px;border-bottom:2px solid var(--accent)}
+.jauge-fond{background:#333333;height:18px;width:100%;margin:8px 0}
+.jauge-barre{background:var(--ok);height:18px;width:0%;transition:width .2s}
+.jauge-barre.depasse{background:var(--accent)}
+.profil-carte{background:#000000;border:1px solid var(--bord);padding:14px 16px;margin:12px 0}
+.profil-carte h3{margin:0 0 8px;font-size:24px;color:#ffffff}
+.profil-carte p{margin:4px 0;color:var(--pale)}
+.profil-carte strong{color:#ffffff}
+.sauvegarde{color:var(--pale);font-size:13px}
+.drapeau{padding:8px 12px;margin:6px 0;border:1px solid var(--warn);background:#241a05;color:#ffffff}
+.drapeau.erreur{border-color:var(--accent);background:#2b0d0f}
+.cache{display:none !important}
+.petit{font-size:13px;color:var(--pale)}
+.radio-ligne{display:flex;gap:8px;align-items:center;color:var(--pale)}
+input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--accent)}
+.choix-concepts label{display:flex;gap:8px;align-items:center;color:var(--texte);font-weight:400;font-size:15px}
+footer{max-width:1100px;margin:0 auto;padding:0 20px 30px;color:var(--pale2);font-size:13px}
+@media(max-width:700px){header.entete h1{font-size:34px}table{font-size:13px}}
+</style>
+</head>
+<body>
+<header class="entete">
+<h1>PARTIR EN <span>APPART!</span></h1>
+<p>Éducation financière, secondaire 5 - Outil de dépôt - Trois-Rivières - Appartement 4 et demi</p>
+</header>
+<div class="bandeau" id="bandeau">
+<div class="bandeau-inner">
+<div class="stat"><div class="lib">Total installation</div><div class="val" id="b-installation">0,00 $</div></div>
+<div class="stat"><div class="lib">Dépenses du mois type</div><div class="val" id="b-mois">0,00 $</div></div>
+<div class="stat"><div class="lib">Revenus du mois</div><div class="val" id="b-revenus">0,00 $</div></div>
+<div class="stat"><div class="lib">Solde du mois</div><div class="val" id="b-solde">0,00 $</div></div>
+</div>
+</div>
+<main>
+<section class="carte"><div class="corps" style="border-top:none;padding-top:16px">
+<h2 style="margin:0 0 6px;font-size:28px">Identification</h2>
+<div class="grille">
+<div><label for="eleve-nom">Nom de l'élève</label><input type="text" id="eleve-nom" autocomplete="off"></div>
+<div><label for="eleve-groupe">Groupe</label><input type="text" id="eleve-groupe" autocomplete="off"></div>
+<div><label for="eleve-profil">Numéro de profil (1 à 30)</label><select id="eleve-profil"><option value="">Choisir un profil</option></select></div>
+</div>
+<div id="profil-carte"></div>
+<div class="actions">
+<button type="button" id="btn-exporter">Exporter mon dossier</button>
+<label class="btn secondaire" for="fichier-import">Importer un dossier</label>
+<input type="file" id="fichier-import" accept=".json,application/json" class="cache">
+<button type="button" class="secondaire" id="btn-effacer">Tout effacer</button>
+<span class="sauvegarde" id="mention-sauvegarde">Sauvegardé automatiquement</span>
+</div>
+<div class="actions"><button type="button" class="btn-correction" id="btn-mode-correction">Mode correction - Enseignant</button><span class="petit">Section barrée : réservée à l'enseignant, code requis pour l'ouvrir.</span></div>
+</div></section>
+
+<section class="carte" id="panneau-correction" style="display:none"><div class="corps" style="border-top:none;padding-top:16px">
+<div id="verrou-correction">
+<h2 style="margin:0 0 6px;font-size:28px">Mode correction - Section barrée</h2>
+<p class="petit">Cette section est réservée à l'enseignant. Entre ton code enseignant pour la déverrouiller. Elle se barre de nouveau dès que tu la fermes.</p>
+<div class="grille2">
+<div><label for="code-enseignant">Code enseignant</label><input type="password" id="code-enseignant" autocomplete="off" inputmode="numeric"></div>
+</div>
+<div class="actions"><button type="button" id="btn-deverrouiller">Déverrouiller</button><button type="button" class="secondaire" id="btn-annuler-correction">Annuler</button></div>
+<div id="verrou-message"></div>
+</div>
+<div id="contenu-correction" class="cache">
+<h2 style="margin:0 0 6px;font-size:28px">Mode correction - Enseignant</h2>
+<p class="petit">Importer le fichier JSON exporté par un élève. Les totaux sont recomptés à partir des lignes brutes. Le dossier importé n'est jamais modifié.</p>
+<label class="btn" for="fichier-correction">Importer le dossier d'un élève</label>
+<input type="file" id="fichier-correction" accept=".json,application/json" class="cache">
+<button type="button" class="secondaire" id="btn-fermer-correction">Fermer et barrer le mode correction</button>
+<div id="resultat-correction"></div>
+</div>
+</div></section>
+
+<!-- S1 -->
+<section class="carte"><details open><summary>S1 - Mon profil et mes revenus</summary><div class="corps">
+<div class="grille">
+<div><label for="s1-net">Revenu net mensuel ($)</label><input type="number" id="s1-net" step="0.01" min="0"></div>
+<div><label for="s1-autre">Autre revenu mensuel ($)</label><input type="number" id="s1-autre" step="0.01" min="0"></div>
+<div><label for="s1-aide">Aide des parents par mois ($)</label><input type="number" id="s1-aide" step="0.01" min="0"></div>
+<div><label for="s1-epargne">Épargne de départ ($)</label><input type="number" id="s1-epargne" step="0.01" min="0"></div>
+</div>
+<label for="s1-entente">Mon entente de colocation</label>
+<div class="note">Points à couvrir : partage des coûts à 50 %, répartition des tâches, invités, bruit et heures de silence, utilisation de la salle de bain, et la façon de régler le handicap de ton coloc indiqué dans ton profil. Attention : dire « ça ne me dérange pas » ne suffit pas. Même si le handicap de ton coloc ne te dérange pas, écris une règle précise, avec des heures ou des limites, que deux vraies personnes peuvent suivre.</div>
+<div class="note" id="s1-rappel-coloc"></div>
+<textarea id="s1-entente" placeholder="Écris ton entente ici"></textarea>
+</div></details></section>
+
+<!-- S2 -->
+<section class="carte"><details open><summary>S2 - Mon logement</summary><div class="corps">
+<p class="petit">Compare 3 annonces réelles à Trois-Rivières pour un 4 et demi. Repère de prix : loyer entre 950 $ et 1 200 $ par mois.</p>
+<div id="s2-annonces"></div>
+<label for="s2-justification">Justification du choix</label>
+<textarea id="s2-justification"></textarea>
+<label for="s2-capture">Référence de la capture de l'annonce choisie</label>
+<input type="text" id="s2-capture" placeholder="Nom du fichier de capture déposé dans Classroom">
+</div></details></section>
+
+<!-- S3 -->
+<section class="carte"><details open><summary>S3 - Mon installation</summary><div class="corps">
+<p class="petit">Plafond d'installation : 3 500 $. Il comprend l'ameublement, ta part des électroménagers et les essentiels de démarrage. Il ne comprend pas le premier mois de loyer.</p>
+<div class="note">La chambre de ton coloc est à 0 $ : il apporte ses meubles. Une ligne de note suffit pour cette pièce.</div>
+<div id="s3-pieces"></div>
+<h3 style="font-size:22px;margin:18px 0 4px">Électroménagers</h3>
+<table><thead><tr><th>Item</th><th>Prix ($)</th><th>État</th><th>Référence de capture</th><th></th></tr></thead><tbody id="s3-electro"></tbody></table>
+<button type="button" class="secondaire" id="btn-ajout-electro">Ajouter un électroménager</button>
+<div class="total-ligne"><span>Sous-total électroménagers (total pour l'appartement)</span><strong id="s3-electro-total">0,00 $</strong></div>
+<div class="total-ligne"><span>Ta part des électroménagers (50 %)</span><strong id="s3-electro-part">0,00 $</strong></div>
+<div class="total-ligne grand"><span>Total de l'installation (ta part)</span><strong id="s3-installation">0,00 $</strong></div>
+<div class="jauge-fond"><div class="jauge-barre" id="s3-jauge"></div></div>
+<p class="petit" id="s3-jauge-texte">0,00 $ sur 3 500 $</p>
+<div id="s3-alerte-plafond"></div>
+</div></details></section>
+
+<!-- S4 -->
+<section class="carte"><details open><summary>S4 - Mes services et mes forfaits</summary><div class="corps">
+<h3 style="font-size:22px;margin:8px 0 4px">Électricité - Tarif D d'Hydro-Québec</h3>
+<label for="s4-taille">Taille de l'appartement</label>
+<select id="s4-taille">
+<option value="" selected>Choisis la taille de ton appartement</option>
+<option value="petit">Petit (3 et demi ou petit 4 et demi) - 1 050 kWh</option>
+<option value="moyen">Moyen (4 et demi standard) - 1 350 kWh</option>
+<option value="grand">Grand (grand 4 et demi ou 5 et demi) - 1 700 kWh</option>
+<option value="manuel">Saisie manuelle des kWh</option>
+</select>
+<div id="s4-kwh-manuel-bloc" class="cache"><label for="s4-kwh-manuel">Consommation mensuelle en kWh (saisie manuelle)</label><input type="number" id="s4-kwh-manuel" step="1" min="0" value="1350"></div>
+<div class="demarche" id="s4-demarche"></div>
+<div class="grille">
+<div><label for="s4-internet-fournisseur">Internet - Fournisseur</label><input type="text" id="s4-internet-fournisseur"></div>
+<div><label for="s4-internet-prix">Internet - Prix mensuel pour l'appartement ($)</label><input type="number" id="s4-internet-prix" step="0.01" min="0"></div>
+<div><label for="s4-internet-capture">Internet - Référence de capture</label><input type="text" id="s4-internet-capture" placeholder="Nom du fichier de capture"></div>
+</div>
+<div class="grille">
+<div><label for="s4-cell-fournisseur">Cellulaire - Fournisseur</label><input type="text" id="s4-cell-fournisseur"></div>
+<div><label for="s4-cell-prix">Cellulaire - Prix mensuel ($, personnel)</label><input type="number" id="s4-cell-prix" step="0.01" min="0"></div>
+<div><label for="s4-cell-capture">Cellulaire - Référence de capture</label><input type="text" id="s4-cell-capture" placeholder="Nom du fichier de capture"></div>
+</div>
+<div class="grille">
+<div><label for="s4-ass-compagnie">Assurance habitation locataire - Compagnie</label><input type="text" id="s4-ass-compagnie"></div>
+<div><label for="s4-ass-prix">Assurance habitation - Prix mensuel ($, personnel)</label><input type="number" id="s4-ass-prix" step="0.01" min="0"></div>
+</div>
+</div></details></section>
+
+<!-- S5 -->
+<section class="carte"><details open><summary>S5 - Mon transport et mon épicerie</summary><div class="corps">
+<h3 style="font-size:22px;margin:8px 0 4px">Transport</h3>
+<div class="grille">
+<div><label for="s5-transport-mode">Mode de transport</label><select id="s5-transport-mode"><option value="a-pied">À pied</option><option value="velo">Vélo</option><option value="autobus-sttr">Autobus STTR</option><option value="auto">Auto</option></select></div>
+<div><label for="s5-transport-cout">Coût mensuel du transport ($)</label><input type="number" id="s5-transport-cout" step="0.01" min="0"></div>
+</div>
+<p class="petit">Repère STTR : laissez-passer mensuel général 81 $ par mois en 2026.</p>
+<label for="s5-transport-justification">Justification du transport</label>
+<textarea id="s5-transport-justification"></textarea>
+<h3 style="font-size:22px;margin:18px 0 4px">Menus de la semaine : repas, ingrédients et coûts</h3>
+<p class="petit">Pour chaque repas, écris le nom du repas, puis ses ingrédients : le prix de l'article au magasin, le nombre de portions dans l'achat et le nombre de portions utilisées pour ce repas. L'outil divise le prix selon les portions utilisées : c'est le coût réel de la nourriture mangée. Aucune case de repas ne peut rester vide : 7 jours, 4 moments par jour.</p>
+<p class="petit">Si un même article sert dans deux repas (un pain, un bloc de fromage), inscris-le dans chaque repas où tu l'utilises, avec les portions utilisées là. Pour ton budget, c'est la nourriture utilisée qui compte.</p>
+<div id="s5-menus"></div>
+<p class="petit">Repère : les achats d'une semaine pour 2 personnes coûtent entre 120 $ et 190 $.</p>
+<div class="total-ligne"><span>Achats inscrits dans les menus (2 personnes)</span><strong id="s5-epicerie-achats">0,00 $</strong></div>
+<div class="total-ligne"><span>Nourriture utilisée dans la semaine (2 personnes)</span><strong id="s5-epicerie-semaine">0,00 $</strong></div>
+<div class="total-ligne"><span>Ta part de nourriture utilisée (50 %)</span><strong id="s5-epicerie-part-semaine">0,00 $</strong></div>
+<div class="total-ligne"><span>Ta part pour le mois (semaine utilisée x 4,33)</span><strong id="s5-epicerie-mois">0,00 $</strong></div>
+</div></details></section>
+
+<!-- S6 -->
+<section class="carte"><details open><summary>S6 - Mon budget et mon imprévu</summary><div class="corps">
+<div id="s6-budget"></div>
+<h3 style="font-size:22px;margin:18px 0 4px">Autres dépenses personnelles</h3>
+<table><thead><tr><th>Dépense</th><th>Montant mensuel ($)</th><th></th></tr></thead><tbody id="s6-autres"></tbody></table>
+<button type="button" class="secondaire" id="btn-ajout-autre">Ajouter une dépense</button>
+<label for="s6-ajustements">Ajustements annuels ($, positif ou négatif)</label>
+<input type="number" id="s6-ajustements" step="0.01" value="0">
+<p class="petit">Exemples : immatriculation, mois creux avec moins d'heures de travail, autobus seulement l'hiver.</p>
+<div id="s6-deficit-bloc" class="cache">
+<label for="s6-explication">Explique le déficit et écris ta correction concrète (obligatoire si le solde est négatif)</label>
+<textarea id="s6-explication"></textarea>
+</div>
+<h3 style="font-size:22px;margin:18px 0 4px">Imprévu</h3>
+<div class="grille">
+<div><label for="s6-imprevu-numero">Numéro de la carte pigée</label><input type="text" id="s6-imprevu-numero"></div>
+<div><label for="s6-imprevu-montant">Montant de l'imprévu ($)</label><input type="number" id="s6-imprevu-montant" step="0.01"></div>
+</div>
+<label for="s6-imprevu-ajustement">Mon ajustement</label>
+<textarea id="s6-imprevu-ajustement" placeholder="Décris ton ajustement et chiffre-le en dollars"></textarea>
+</div></details></section>
+
+<!-- S7 -->
+<section class="carte"><details open><summary>S7 - Ma réflexion</summary><div class="corps">
+<label for="s7-surprise">Ma plus grosse surprise</label><textarea id="s7-surprise"></textarea>
+<label for="s7-autrement">Ce que je ferais autrement</label><textarea id="s7-autrement"></textarea>
+<label for="s7-coloc">Coloc ou seul, et pourquoi</label><textarea id="s7-coloc"></textarea>
+<p style="margin:14px 0 4px"><strong>Concepts utilisés (au moins 2 à cocher)</strong></p>
+<div class="choix-concepts" id="s7-concepts">
+<label><input type="checkbox" value="budget"> Budget</label>
+<label><input type="checkbox" value="besoins-et-desirs"> Besoins et désirs</label>
+<label><input type="checkbox" value="epargne"> Épargne</label>
+<label><input type="checkbox" value="credit"> Crédit</label>
+<label><input type="checkbox" value="consommation-responsable"> Consommation responsable</label>
+</div>
+</div></details></section>
+</main>
+<footer>Partir en appart! - Éducation financière, secondaire 5 - Données sauvegardées uniquement dans ce navigateur (localStorage).</footer>
+
+<script id="moteur">
+"use strict";
+var PIECES_CANONIQUES = ["Ma chambre","La chambre de mon coloc","Cuisine","Salon","Salle de bain","Entrée et rangement"];
+var PIECES_COMMUNES = ["Cuisine","Salon","Salle de bain","Entrée et rangement"];
+var PLAFOND_INSTALLATION = 3500;
+var TARIF_D = {fraisAccesJour:0.46154, jours:30, tranche1Taux:0.07065, tranche1MaxKwh:1200, tranche2Taux:0.11142, taxes:0.14975, multiplicateurTaxes:1.14975};
+var BAREME_KWH = {petit:1050, moyen:1350, grand:1700};
+function round2(x){ var n = Number(x); if(!isFinite(n)) return 0; return Math.round((n + Number.EPSILON) * 100) / 100; }
+function num(x){ var n = parseFloat(x); return isFinite(n) ? n : 0; }
+function formatMontant(x){ var n = round2(num(x)); var neg = n < 0; var abs = Math.abs(n); var parts = abs.toFixed(2).split("."); var ent = parts[0]; var dec = parts[1]; var out = ""; while(ent.length > 3){ out = " " + ent.slice(-3) + out; ent = ent.slice(0,-3); } out = ent + out; return (neg ? "- " : "") + out + "," + dec + " $"; }
+function calculerElectricite(kwh){
+  var k = Math.max(0, num(kwh));
+  if(k <= 0) return {kwh:0, acces:0, tranche1Kwh:0, tranche1Montant:0, tranche2Kwh:0, tranche2Montant:0, sousTotal:0, taxes:0, total:0, part:0};
+  var accesRaw = TARIF_D.fraisAccesJour * TARIF_D.jours;
+  var t1Kwh = Math.min(k, TARIF_D.tranche1MaxKwh);
+  var t2Kwh = Math.max(0, k - TARIF_D.tranche1MaxKwh);
+  var t1Raw = t1Kwh * TARIF_D.tranche1Taux;
+  var t2Raw = t2Kwh * TARIF_D.tranche2Taux;
+  var acces = round2(accesRaw);
+  var tranche1Montant = round2(t1Raw);
+  var tranche2Montant = round2(t2Raw);
+  var sousTotal = round2(accesRaw + t1Raw + t2Raw);
+  var taxesMontant = round2(sousTotal * TARIF_D.taxes);
+  var total = round2(sousTotal * TARIF_D.multiplicateurTaxes);
+  var part = round2(total / 2);
+  return {kwh:k, acces:acces, tranche1Kwh:t1Kwh, tranche1Montant:tranche1Montant, tranche2Kwh:t2Kwh, tranche2Montant:tranche2Montant, sousTotal:sousTotal, taxes:taxesMontant, total:total, part:part};
+}
+function resoudreKwh(elec){
+  if(!elec) return 0;
+  if(elec.taille === "manuel"){ return num(elec.kwhManuel != null ? elec.kwhManuel : elec.kwh); }
+  if(elec.taille && BAREME_KWH[elec.taille] != null) return BAREME_KWH[elec.taille];
+  if(elec.kwh != null) return num(elec.kwh);
+  return 0;
+}
+function partLigneMeuble(ligne){
+  var prix = num(ligne && ligne.prix);
+  if(ligne && (ligne.type === "partagé" || ligne.type === "partage")) return round2(prix / 2);
+  return round2(prix);
+}
+function calculerInstallation(s3){
+  var parPiece = {}; var parPieceBrut = {}; var totalPiecesPart = 0; var totalPiecesBrut = 0;
+  var pieces = (s3 && s3.pieces) ? s3.pieces : {};
+  PIECES_CANONIQUES.forEach(function(piece){
+    var lignes = Array.isArray(pieces[piece]) ? pieces[piece] : [];
+    var brut = 0; var part = 0;
+    lignes.forEach(function(l){ brut += num(l && l.prix); if(piece === "La chambre de mon coloc"){ part += 0; } else { part += partLigneMeuble(l); } });
+    brut = round2(brut); part = round2(part);
+    parPieceBrut[piece] = brut; parPiece[piece] = part;
+    totalPiecesBrut += brut; totalPiecesPart += part;
+  });
+  var electro = (s3 && Array.isArray(s3.electro)) ? s3.electro : [];
+  var electroBrut = 0; electro.forEach(function(l){ electroBrut += num(l && l.prix); });
+  electroBrut = round2(electroBrut);
+  var electroPart = round2(electroBrut / 2);
+  totalPiecesPart = round2(totalPiecesPart); totalPiecesBrut = round2(totalPiecesBrut);
+  var total = round2(totalPiecesPart + electroPart);
+  return {parPiece:parPiece, parPieceBrut:parPieceBrut, totalPiecesPart:totalPiecesPart, totalPiecesBrut:totalPiecesBrut, electroBrut:electroBrut, electroPart:electroPart, totalInstallation:total, total:total, plafond:PLAFOND_INSTALLATION, depasse: total > PLAFOND_INSTALLATION};
+}
+var TYPES_REPAS = [["dejeuner","Déjeuner"],["diner","Dîner"],["souper","Souper"],["collations","Collations"]];
+function repasNormalise(valeur){
+  if(typeof valeur === "string") return {nom:valeur, ingredients:[]};
+  if(valeur && typeof valeur === "object") return {nom:(valeur.nom || ""), ingredients:(Array.isArray(valeur.ingredients) ? valeur.ingredients : [])};
+  return {nom:"", ingredients:[]};
+}
+function coutIngredient(ligne){
+  var prix = num(ligne && ligne.prix);
+  var pa = num(ligne && ligne.portionsAchat);
+  var pu = num(ligne && ligne.portionsUtilisees);
+  if(pa <= 0) pa = (pu > 0 ? pu : 1);
+  if(pu <= 0) return 0;
+  return round2(prix * pu / pa);
+}
+function calculerEpicerie(menus){
+  var jours = Array.isArray(menus) ? menus : [];
+  var utilisee = 0; var achats = 0;
+  jours.forEach(function(jour){
+    if(!jour) return;
+    TYPES_REPAS.forEach(function(pair){
+      var repas = repasNormalise(jour[pair[0]]);
+      repas.ingredients.forEach(function(l){
+        if(!l) return;
+        achats += num(l.prix);
+        utilisee += coutIngredient(l);
+      });
+    });
+  });
+  utilisee = round2(utilisee); achats = round2(achats);
+  var semainePart = round2(utilisee / 2);
+  var moisPart = round2(semainePart * 4.33);
+  var moisTotal = round2(utilisee * 4.33);
+  return {semaineTotale:utilisee, semaineUtilisee:utilisee, achatsTotale:achats, semainePart:semainePart, moisPart:moisPart, moisTotal:moisTotal};
+}
+function loyerChoisiDe(dossier){
+  if(!dossier || !dossier.s2) return 0;
+  var annonces = Array.isArray(dossier.s2.annonces) ? dossier.s2.annonces : [];
+  var choix = dossier.s2.choix;
+  if(choix == null || choix === "" || annonces[Number(choix)] == null) return 0;
+  return num(annonces[Number(choix)].loyer);
+}
+function calculerBudget(dossier){
+  var install = calculerInstallation(dossier ? dossier.s3 : null);
+  var elec = calculerElectricite(resoudreKwh(dossier && dossier.s4 ? dossier.s4.electricite : null));
+  var epi = calculerEpicerie(dossier && dossier.s5 ? dossier.s5.menus : null);
+  var s1 = (dossier && dossier.s1) ? dossier.s1 : {};
+  var revenusMois = round2(num(s1.revenuNet) + num(s1.autreRevenu) + num(s1.aideParents));
+  var loyer = loyerChoisiDe(dossier);
+  var loyerPart = round2(loyer / 2);
+  var internetPrix = dossier && dossier.s4 && dossier.s4.internet ? num(dossier.s4.internet.prix) : 0;
+  var internetPart = round2(internetPrix / 2);
+  var cellulaire = dossier && dossier.s4 && dossier.s4.cellulaire ? round2(num(dossier.s4.cellulaire.prix)) : 0;
+  var assurance = dossier && dossier.s4 && dossier.s4.assurance ? round2(num(dossier.s4.assurance.prix)) : 0;
+  var transport = dossier && dossier.s5 && dossier.s5.transport ? round2(num(dossier.s5.transport.cout)) : 0;
+  var autres = 0;
+  if(dossier && dossier.s6 && Array.isArray(dossier.s6.autresDepenses)){ dossier.s6.autresDepenses.forEach(function(l){ autres += num(l && (l.montant != null ? l.montant : l.prix)); }); }
+  autres = round2(autres);
+  var depensesMois = round2(loyerPart + elec.part + internetPart + cellulaire + assurance + transport + epi.moisPart + autres);
+  var solde = round2(revenusMois - depensesMois);
+  var premierMois = round2(install.totalInstallation + depensesMois);
+  var ajustements = dossier && dossier.s6 ? num(dossier.s6.ajustementsAnnuels) : 0;
+  var annee = round2(depensesMois * 12 + ajustements);
+  return {revenusMois:revenusMois, loyer:round2(loyer), loyerPart:loyerPart, electricitePart:elec.part, electriciteTotal:elec.total, internetPart:internetPart, internetTotal:round2(internetPrix), cellulaire:cellulaire, assurance:assurance, transport:transport, epicerieMoisPart:epi.moisPart, autresDepenses:autres, depensesMois:depensesMois, totalMois:depensesMois, solde:solde, installation:install.totalInstallation, premierMois:premierMois, annee:annee, ajustementsAnnuels:round2(ajustements)};
+}
+function calculerTotaux(dossier){
+  var install = calculerInstallation(dossier ? dossier.s3 : null);
+  var elec = calculerElectricite(resoudreKwh(dossier && dossier.s4 ? dossier.s4.electricite : null));
+  var epi = calculerEpicerie(dossier && dossier.s5 ? dossier.s5.menus : null);
+  var budget = calculerBudget(dossier);
+  return {installation:install.totalInstallation, totalInstallation:install.totalInstallation, parPiece:install.parPiece, parPieceBrut:install.parPieceBrut, totalPiecesPart:install.totalPiecesPart, electroBrut:install.electroBrut, electroPart:install.electroPart, electricite:elec, electriciteTotal:elec.total, electricitePart:elec.part, epicerieSemaineTotale:epi.semaineTotale, epicerieSemaineUtilisee:epi.semaineUtilisee, epicerieAchatsTotale:epi.achatsTotale, epicerieSemainePart:epi.semainePart, epicerieMoisPart:epi.moisPart, revenusMois:budget.revenusMois, loyerPart:budget.loyerPart, internetPart:budget.internetPart, depensesMois:budget.depensesMois, totalMois:budget.depensesMois, solde:budget.solde, premierMois:budget.premierMois, annee:budget.annee, ajustementsAnnuels:budget.ajustementsAnnuels, budget:budget};
+}
+function analyserDrapeaux(dossier, totaux, totauxStockes){
+  var d = []; function add(niveau, code, message){ d.push({niveau:niveau, code:code, message:message}); }
+  var t = totaux || calculerTotaux(dossier);
+  var vide = function(v){ return v == null || (typeof v === "string" && v.trim() === ""); };
+  // Sections vides
+  var s1 = dossier.s1 || {}; var s2 = dossier.s2 || {}; var s3 = dossier.s3 || {}; var s4 = dossier.s4 || {}; var s5 = dossier.s5 || {}; var s6 = dossier.s6 || {}; var s7 = dossier.s7 || {};
+  var nbLignesPieces = 0; if(s3.pieces){ Object.keys(s3.pieces).forEach(function(k){ if(Array.isArray(s3.pieces[k])) nbLignesPieces += s3.pieces[k].filter(function(l){ return l && !vide(l.nom); }).length; }); }
+  var nbElectro = Array.isArray(s3.electro) ? s3.electro.filter(function(l){ return l && !vide(l.nom); }).length : 0;
+  if(num(s1.revenuNet)===0 && num(s1.autreRevenu)===0 && num(s1.aideParents)===0 && vide(s1.ententeColocation)) add("erreur","S1_VIDE","S1 vide : aucun revenu et aucune entente de colocation.");
+  var annoncesRemplies = Array.isArray(s2.annonces) ? s2.annonces.filter(function(a){ return a && !vide(a.adresse); }).length : 0;
+  if(annoncesRemplies===0) add("erreur","S2_VIDE","S2 vide : aucune annonce remplie.");
+  if(nbLignesPieces===0 && nbElectro===0) add("erreur","S3_VIDE","S3 vide : aucune ligne d'ameublement ni d'électroménager.");
+  if((!s4.internet || vide(s4.internet.fournisseur)) && (!s4.cellulaire || vide(s4.cellulaire.fournisseur)) && (!s4.assurance || vide(s4.assurance.compagnie))) add("erreur","S4_VIDE","S4 vide : aucun service ni forfait rempli.");
+  var menusListe = Array.isArray(s5.menus) ? s5.menus : [];
+  var nbRepasRemplis = 0;
+  menusListe.forEach(function(j){ if(!j) return; TYPES_REPAS.forEach(function(pair){ if(!vide(repasNormalise(j[pair[0]]).nom)) nbRepasRemplis++; }); });
+  if(nbRepasRemplis===0 && (!s5.transport || vide(s5.transport.mode))) add("erreur","S5_VIDE","S5 vide : aucun repas rempli et aucun transport.");
+  if(!Array.isArray(s6.autresDepenses) || true){ /* S6 est calcule, on verifie l'imprevu */ if(!s6.imprevu || vide(s6.imprevu.numeroCarte)) add("avertissement","S6_IMPREVU_VIDE","S6 : numéro de la carte d'imprévu vide."); }
+  if(vide(s7.surprise) && vide(s7.autrement) && vide(s7.colocOuSeul)) add("erreur","S7_VIDE","S7 vide : aucune réflexion remplie.");
+  // Prix a 0 dans une ligne remplie
+  function checkPrix(lignes, contexte){ (lignes||[]).forEach(function(l){ if(l && !vide(l.nom) && num(l.prix)===0) add("erreur","PRIX_ZERO", contexte + " : prix à 0 $ pour « " + l.nom + " »."); }); }
+  if(s3.pieces){ Object.keys(s3.pieces).forEach(function(k){ if(k !== "La chambre de mon coloc") checkPrix(s3.pieces[k], "S3 " + k); }); }
+  checkPrix(s3.electro, "S3 Électroménagers");
+  // Menus S5 : aucune case de repas vide, ingrédients chiffrés avec portions
+  var repasVides = []; var sansIngredients = []; var ingredientsZero = []; var portionsProblemes = [];
+  menusListe.forEach(function(j){
+    if(!j) return;
+    TYPES_REPAS.forEach(function(pair){
+      var repas = repasNormalise(j[pair[0]]);
+      var etiquette = (j.jour || "?") + " - " + pair[1].toLowerCase();
+      if(vide(repas.nom)){ repasVides.push(etiquette); return; }
+      var ings = repas.ingredients.filter(function(l){ return l && (!vide(l.nom) || num(l.prix) > 0); });
+      if(ings.length === 0){ sansIngredients.push(etiquette); return; }
+      ings.forEach(function(l){
+        if(!vide(l.nom) && num(l.prix) === 0) ingredientsZero.push(etiquette + " : " + l.nom);
+        if(num(l.portionsAchat) < 1) portionsProblemes.push(etiquette + " : portions de l'achat manquantes pour « " + (l.nom || "?") + " »");
+        else if(num(l.portionsUtilisees) > num(l.portionsAchat)) portionsProblemes.push(etiquette + " : plus de portions utilisées que de portions achetées pour « " + (l.nom || "?") + " »");
+        else if(num(l.portionsUtilisees) <= 0) portionsProblemes.push(etiquette + " : aucune portion utilisée pour « " + (l.nom || "?") + " »");
+      });
+    });
+  });
+  function exemples(liste){ return liste.slice(0, 3).join(" ; ") + (liste.length > 3 ? " ; ..." : ""); }
+  if(repasVides.length) add("erreur","REPAS_VIDES","S5 Menus : " + repasVides.length + " case(s) de repas vide(s), aucune ne peut rester vide (" + exemples(repasVides) + ").");
+  if(sansIngredients.length) add("erreur","REPAS_SANS_INGREDIENTS","S5 Menus : " + sansIngredients.length + " repas sans aucun ingrédient (" + exemples(sansIngredients) + ").");
+  if(ingredientsZero.length) add("erreur","PRIX_ZERO","S5 Menus : prix à 0 $ (" + exemples(ingredientsZero) + ").");
+  if(portionsProblemes.length) add("avertissement","PORTIONS","S5 Menus : portions à vérifier (" + exemples(portionsProblemes) + ").");
+  if(s6.autresDepenses){ s6.autresDepenses.forEach(function(l){ if(l && !vide(l.nom) && num(l.montant != null ? l.montant : l.prix)===0) add("erreur","PRIX_ZERO","S6 Autres dépenses : montant à 0 $ pour « " + l.nom + " »."); }); }
+  // Captures manquantes gros postes
+  if(vide(s2.captureAnnonce)) add("erreur","CAPTURE_ANNONCE","Capture manquante : annonce choisie (S2).");
+  if(nbElectro===0) add("erreur","CAPTURE_ELECTRO","Capture manquante : aucun électroménager (S3).");
+  else if(!s3.electro.some(function(l){ return l && !vide(l.capture); })) add("erreur","CAPTURE_ELECTRO","Capture manquante : aucun électroménager avec référence de capture (S3).");
+  if(!s4.internet || vide(s4.internet.capture)) add("erreur","CAPTURE_INTERNET","Capture manquante : internet (S4).");
+  if(!s4.cellulaire || vide(s4.cellulaire.capture)) add("erreur","CAPTURE_CELLULAIRE","Capture manquante : cellulaire (S4).");
+  // Plafond
+  if(t.installation > PLAFOND_INSTALLATION) add("erreur","PLAFOND_DEPASSE","Installation au-dessus du plafond de 3 500 $ : " + formatMontant(t.installation) + ".");
+  // Solde negatif sans explication
+  if(t.solde < 0 && vide(s6.explicationDeficit)) add("erreur","DEFICIT_SANS_EXPLICATION","Solde du mois négatif (" + formatMontant(t.solde) + ") sans explication du déficit en S6.");
+  // Electricite non conforme
+  var elec = s4.electricite || {}; var kwh = resoudreKwh(elec);
+  var valeursBar = [1050,1350,1700];
+  var estManuel = elec.taille === "manuel";
+  if(!elec.taille) add("erreur","ELEC_TAILLE_MANQUANTE","S4 : aucune taille d'appartement choisie, le calcul d'électricité n'est pas fait.");
+  else if(estManuel && kwh <= 0) add("erreur","ELEC_TAILLE_MANQUANTE","S4 : saisie manuelle de l'électricité à 0 kWh, aucun calcul fait.");
+  if(valeursBar.indexOf(kwh) === -1 && !estManuel && !!elec.taille) add("erreur","ELEC_NON_CONFORME","Électricité non conforme : " + kwh + " kWh ne fait pas partie du barème (1 050, 1 350, 1 700) et ce n'est pas une saisie manuelle.");
+  if(totauxStockes && totauxStockes.electricitePart != null && Math.abs(round2(num(totauxStockes.electricitePart)) - round2(t.electriciteTotal/2)) > 0.01) add("erreur","ELEC_PART","Électricité non conforme : la part stockée (" + formatMontant(num(totauxStockes.electricitePart)) + ") diffère de la moitié du total recompté (" + formatMontant(round2(t.electriciteTotal/2)) + ").");
+  // Loyer fourchette
+  var loyer = loyerChoisiDe(dossier);
+  if(loyer > 0 && (loyer < 950 || loyer > 1200)) add("avertissement","LOYER_HORS_FOURCHETTE","Loyer choisi hors de la fourchette repère 950 $ à 1 200 $ : " + formatMontant(loyer) + ".");
+  // Epicerie fourchette
+  if(t.epicerieAchatsTotale > 0 && (t.epicerieAchatsTotale < 120 || t.epicerieAchatsTotale > 190)) add("avertissement","EPICERIE_HORS_FOURCHETTE","Achats d'épicerie de la semaine hors de la fourchette repère 120 $ à 190 $ : " + formatMontant(t.epicerieAchatsTotale) + ".");
+  // Concepts S7
+  var concepts = Array.isArray(s7.concepts) ? s7.concepts : [];
+  if(concepts.length < 2) add("erreur","CONCEPTS_INSUFFISANTS","S7 : moins de 2 concepts cochés (" + concepts.length + ").");
+  // Entente vide ou sans règle concrète
+  if(vide(s1.ententeColocation)) add("erreur","ENTENTE_VIDE","Entente de colocation vide (S1).");
+  else if(!/[0-9]/.test(s1.ententeColocation)) add("avertissement","ENTENTE_SANS_REGLE","Entente sans aucun repère concret (aucune heure, aucune quantité) : vérifier qu'elle contient une vraie règle précise pour le handicap du coloc, et pas seulement une phrase du type « ça ne me dérange pas ».");
+  return d;
+}
+var MoteurAppartObj = {PIECES_CANONIQUES:PIECES_CANONIQUES, PIECES_COMMUNES:PIECES_COMMUNES, PLAFOND_INSTALLATION:PLAFOND_INSTALLATION, TARIF_D:TARIF_D, BAREME_KWH:BAREME_KWH, round2:round2, num:num, formatMontant:formatMontant, calculerElectricite:calculerElectricite, resoudreKwh:resoudreKwh, calculerInstallation:calculerInstallation, calculerEpicerie:calculerEpicerie, TYPES_REPAS:TYPES_REPAS, repasNormalise:repasNormalise, coutIngredient:coutIngredient, calculerBudget:calculerBudget, calculerTotaux:calculerTotaux, analyserDrapeaux:analyserDrapeaux, loyerChoisiDe:loyerChoisiDe};
+if(typeof globalThis !== "undefined") globalThis.MoteurAppart = MoteurAppartObj;
+if(typeof module !== "undefined" && module.exports) module.exports = MoteurAppartObj;
+</script>
+
+<script id="donnees-profils">
+var PROFILS_DATA = [{"numero":1,"prenom":"Léa","situation":"etudes","situation_detail":"Études : Techniques de soins infirmiers au Cégep de Trois-Rivières. Emploi : Caissière dans une pharmacie.","ecole":"Cégep de Trois-Rivières","programme":"Techniques de soins infirmiers","employeur":"Caissière dans une pharmacie","taux_horaire":16.6,"heures_semaine":14,"revenu_brut_mensuel":1005,"revenu_net_mensuel":885,"autre_revenu_mensuel":0,"aide_parents_mensuelle":150,"epargne_depart":2100,"ville_origine":"Shawinigan","transport":"Pas de permis de conduire","atout":"Tes parents te donnent leur divan et leur table de cuisine : deux gros morceaux déjà réglés.","handicap":"Tu dois mettre 40 $ de côté chaque mois pour tes frais de matériel de stage.","coloc":{"prenom":"Maxime","occupation":"Commis d'entrepôt","revenu_mensuel_approx":1400,"description":"Calme, propre, il aime cuisiner de grosses quantités le dimanche.","handicap":"Il travaille de nuit trois fois par semaine et dort le jour : le silence le jour doit être dans l'entente.","part_couts_partages":"50 %"}},{"numero":2,"prenom":"Noah","situation":"emploi","situation_detail":"Premier emploi : Commis d'entrepôt dans un centre de distribution de Trois-Rivières.","ecole":null,"programme":null,"employeur":"Commis d'entrepôt dans un centre de distribution de Trois-Rivières","taux_horaire":19.25,"heures_semaine":40,"revenu_brut_mensuel":3335,"revenu_net_mensuel":2635,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":3800,"ville_origine":"Saint-Tite","transport":"A une voiture déjà payée","atout":"Ta voiture est payée au complet : aucun paiement mensuel.","handicap":"Ton travail est à 25 minutes de route : compte environ 200 $ d'essence par mois.","coloc":{"prenom":"Océane","occupation":"Serveuse dans un café","revenu_mensuel_approx":1500,"description":"Sociable et ordonnée, elle connaît déjà la vie en colocation.","handicap":"Elle a un chat : l'appartement doit accepter les animaux et il faudra prévoir la litière.","part_couts_partages":"50 %"}},{"numero":3,"prenom":"Emma","situation":"etudes","situation_detail":"Études : Techniques d'éducation à l'enfance au Collège Laflèche. Emploi : Tutrice en aide aux devoirs.","ecole":"Collège Laflèche","programme":"Techniques d'éducation à l'enfance","employeur":"Tutrice en aide aux devoirs","taux_horaire":17.5,"heures_semaine":12,"revenu_brut_mensuel":910,"revenu_net_mensuel":800,"autre_revenu_mensuel":100,"aide_parents_mensuelle":250,"epargne_depart":1600,"ville_origine":"Louiseville","transport":"Pas de permis de conduire","atout":"Tu reçois une bourse de 100 $ par mois d'une fondation de ton ancienne école.","handicap":"Allergie sévère aux arachides : lecture d'étiquettes obligatoire et règles de cuisine strictes, l'épicerie coûte un peu plus cher.","coloc":{"prenom":"Dereck","occupation":"Étudiant en mécanique au CFP Qualitech","revenu_mensuel_approx":900,"description":"Tranquille et manuel, il peut réparer presque tout dans un appartement.","handicap":"Il joue de la batterie électronique le soir : les heures de pratique sont à négocier dans l'entente.","part_couts_partages":"50 %"}},{"numero":4,"prenom":"Liam","situation":"etudes","situation_detail":"Études : Techniques de l'informatique au Cégep de Trois-Rivières. Emploi : Aide-cuisinier dans un restaurant.","ecole":"Cégep de Trois-Rivières","programme":"Techniques de l'informatique","employeur":"Aide-cuisinier dans un restaurant","taux_horaire":16.6,"heures_semaine":16,"revenu_brut_mensuel":1150,"revenu_net_mensuel":1015,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":2900,"ville_origine":"Nicolet","transport":"A son permis, pas d'auto","atout":"Ton frère te vend son réfrigérateur et sa cuisinière usagés pour 150 $ : les gros électroménagers sont presque réglés.","handicap":"Tu retournes chez tes parents une fin de semaine sur deux : compte environ 50 $ par mois d'autobus régional.","coloc":{"prenom":"Sabrina","occupation":"Préposée aux bénéficiaires","revenu_mensuel_approx":1900,"description":"Énergique et directe, elle aime que les choses soient claires dès le départ.","handicap":"Elle commence à travailler à 5 h du matin : la salle de bain très tôt et le silence le matin sont à prévoir.","part_couts_partages":"50 %"}},{"numero":5,"prenom":"Chloé","situation":"etudes","situation_detail":"Études : DEP en soudage-montage au Bel-Avenir / Qualitech (formation professionnelle). Emploi : Commis dans un dépanneur.","ecole":"Bel-Avenir / Qualitech (formation professionnelle)","programme":"DEP en soudage-montage","employeur":"Commis dans un dépanneur","taux_horaire":16.6,"heures_semaine":16,"revenu_brut_mensuel":1150,"revenu_net_mensuel":1015,"autre_revenu_mensuel":0,"aide_parents_mensuelle":100,"epargne_depart":1750,"ville_origine":"Grand-Mère","transport":"Pas de permis de conduire","atout":"Ton oncle soudeur te prête ses outils pour ton DEP : tu évites un gros achat de matériel.","handicap":"Ton horaire de DEP est chargé : tu ne peux pas travailler plus de 16 heures par semaine.","coloc":{"prenom":"Kevin","occupation":"Apprenti électricien","revenu_mensuel_approx":1700,"description":"Farceur mais fiable, il paie toujours sa part à temps.","handicap":"Il garde son vélo de route haut de gamme dans l'appartement : un espace de rangement doit être prévu.","part_couts_partages":"50 %"}},{"numero":6,"prenom":"Nathan","situation":"emploi","situation_detail":"Premier emploi : Aide-mécanicien dans un garage de Trois-Rivières.","ecole":null,"programme":null,"employeur":"Aide-mécanicien dans un garage de Trois-Rivières","taux_horaire":18.75,"heures_semaine":40,"revenu_brut_mensuel":3250,"revenu_net_mensuel":2570,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":2600,"ville_origine":"Bécancour","transport":"A une voiture déjà payée","atout":"Ton employeur paie ton forfait de cellulaire : une facture de moins chaque mois.","handicap":"Tu dois acheter tes outils petit à petit : compte 75 $ par mois pendant l'année.","coloc":{"prenom":"Mélodie","occupation":"Vendeuse dans une boutique de vêtements","revenu_mensuel_approx":1250,"description":"Douce et organisée, elle adore cuisiner pour deux.","handicap":"Elle est végétarienne : les courses communes doivent être organisées (repas communs sans viande ou en deux versions).","part_couts_partages":"50 %"}},{"numero":7,"prenom":"Maélie","situation":"etudes","situation_detail":"Études : Sciences humaines au Cégep de Trois-Rivières. Emploi : Monitrice à la piscine municipale.","ecole":"Cégep de Trois-Rivières","programme":"Sciences humaines","employeur":"Monitrice à la piscine municipale","taux_horaire":17.25,"heures_semaine":13,"revenu_brut_mensuel":970,"revenu_net_mensuel":855,"autre_revenu_mensuel":0,"aide_parents_mensuelle":200,"epargne_depart":1950,"ville_origine":"Yamachiche","transport":"Pas de permis de conduire","atout":"Ta grand-mère te donne un ensemble complet de vaisselle, chaudrons et ustensiles : la cuisine est presque équipée.","handicap":"Tu es asthmatique : pas de tapis dans ta chambre et aucun appartement avec des traces de moisissure, c'est un critère de choix réel.","coloc":{"prenom":"Anthony","occupation":"Agent de sécurité","revenu_mensuel_approx":1600,"description":"Discret et respectueux, il a l'habitude des horaires décalés.","handicap":"Il reçoit sa petite fille un week-end sur deux : il faut prévoir un divan-lit ou de l'espace au salon.","part_couts_partages":"50 %"}},{"numero":8,"prenom":"Édouard","situation":"emploi","situation_detail":"Premier emploi : Cuisinier dans un restaurant de Trois-Rivières.","ecole":null,"programme":null,"employeur":"Cuisinier dans un restaurant de Trois-Rivières","taux_horaire":17.8,"heures_semaine":38,"revenu_brut_mensuel":2930,"revenu_net_mensuel":2315,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":3100,"ville_origine":"Trois-Rivières","transport":"A un vélo et son permis, pas d'auto","atout":"Tes repas sont gratuits à chaque quart de travail : environ 80 $ d'épicerie de moins par mois.","handicap":"Tes horaires changent chaque semaine et tu finis souvent tard : les soupers communs seront parfois décalés.","coloc":{"prenom":"Kim","occupation":"Coiffeuse dans un salon","revenu_mensuel_approx":1450,"description":"Précise et de bonne humeur, elle tient son horaire comme une horloge.","handicap":"Elle n'a pas de permis de conduire : l'appartement doit être près d'un axe d'autobus de la STTR et de son salon.","part_couts_partages":"50 %"}},{"numero":9,"prenom":"Rosalie","situation":"etudes","situation_detail":"Études : Techniques de tourisme au Collège Laflèche. Emploi : Hôtesse dans un café.","ecole":"Collège Laflèche","programme":"Techniques de tourisme","employeur":"Hôtesse dans un café","taux_horaire":16.6,"heures_semaine":15,"revenu_brut_mensuel":1080,"revenu_net_mensuel":950,"autre_revenu_mensuel":0,"aide_parents_mensuelle":300,"epargne_depart":2400,"ville_origine":"Saint-Étienne-des-Grès","transport":"A son permis, pas d'auto","atout":"Tes parents te prêtent leur laveuse et leur sécheuse : tu n'as que le réfrigérateur et la cuisinière à trouver.","handicap":"Tu dois économiser 100 $ par mois pour un voyage d'études obligatoire au printemps : c'est une sortie fixe dans ton budget.","coloc":{"prenom":"Jérôme","occupation":"Livreur pour une quincaillerie","revenu_mensuel_approx":1550,"description":"Débrouillard et généreux, il connaît tous les trucs pour acheter usagé.","handicap":"Il fume sur le balcon : l'appartement doit en avoir un, et les règles d'odeurs sont à écrire.","part_couts_partages":"50 %"}},{"numero":10,"prenom":"Félix","situation":"etudes","situation_detail":"Études : Techniques de comptabilité et de gestion au Cégep de Trois-Rivières. Emploi : Commis dans une quincaillerie.","ecole":"Cégep de Trois-Rivières","programme":"Techniques de comptabilité et de gestion","employeur":"Commis dans une quincaillerie","taux_horaire":17,"heures_semaine":18,"revenu_brut_mensuel":1325,"revenu_net_mensuel":1125,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":4200,"ville_origine":"Maskinongé","transport":"A une voiture déjà payée","atout":"Tu as déjà ton ordinateur, ton bureau et ta chaise : ta chambre est à moitié meublée.","handicap":"Tu envoies 75 $ par mois à ta mère pour l'aider : c'est une dépense fixe de ton budget.","coloc":{"prenom":"Vanessa","occupation":"Étudiante en soins infirmiers","revenu_mensuel_approx":1000,"description":"Studieuse et calme, elle révise souvent le soir.","handicap":"Elle étudie jusqu'à minuit et a besoin de silence après 23 h : les heures de bruit sont à négocier.","part_couts_partages":"50 %"}},{"numero":11,"prenom":"Aïcha","situation":"emploi","situation_detail":"Premier emploi : Préposée aux bénéficiaires dans une résidence privée.","ecole":null,"programme":null,"employeur":"Préposée aux bénéficiaires dans une résidence privée","taux_horaire":19.8,"heures_semaine":36,"revenu_brut_mensuel":3090,"revenu_net_mensuel":2440,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":2000,"ville_origine":"Shawinigan","transport":"A une voiture déjà payée","atout":"Tes uniformes sont fournis par l'employeur : aucun frais de vêtements de travail.","handicap":"Tes quarts de travail durent 12 heures, souvent la fin de semaine : les repas doivent être planifiés d'avance.","coloc":{"prenom":"Cédric","occupation":"Commis dans une librairie","revenu_mensuel_approx":1100,"description":"Lecteur tranquille, très respectueux des espaces des autres.","handicap":"Il est allergique aux arachides et aux noix : règles strictes dans la cuisine commune et produits séparés.","part_couts_partages":"50 %"}},{"numero":12,"prenom":"Hugo","situation":"etudes","situation_detail":"Études : DEP en cuisine au Bel-Avenir / Qualitech (formation professionnelle). Emploi : Aide-cuisinier la fin de semaine.","ecole":"Bel-Avenir / Qualitech (formation professionnelle)","programme":"DEP en cuisine","employeur":"Aide-cuisinier la fin de semaine","taux_horaire":16.6,"heures_semaine":16,"revenu_brut_mensuel":1150,"revenu_net_mensuel":1015,"autre_revenu_mensuel":0,"aide_parents_mensuelle":150,"epargne_depart":1500,"ville_origine":"Saint-Maurice","transport":"Pas de permis de conduire","atout":"Ton employeur te laisse rapporter les surplus du jour : environ 60 $ d'épicerie de moins par mois.","handicap":"Tu dois acheter ton uniforme et tes couteaux de cuisine en début d'année : environ 300 $ à sortir de ton épargne ou de ton premier mois.","coloc":{"prenom":"Roxanne","occupation":"Vendeuse dans une pharmacie","revenu_mensuel_approx":1300,"description":"Pétillante et très propre, elle déteste les piles de vaisselle.","handicap":"Ses horaires changent chaque semaine et elle dort à des heures décalées : l'entente doit couvrir le bruit et la salle de bain.","part_couts_partages":"50 %"}},{"numero":13,"prenom":"Zara","situation":"emploi","situation_detail":"Premier emploi : Vendeuse-conseil dans un magasin de sport.","ecole":null,"programme":null,"employeur":"Vendeuse-conseil dans un magasin de sport","taux_horaire":17.4,"heures_semaine":35,"revenu_brut_mensuel":2640,"revenu_net_mensuel":2085,"autre_revenu_mensuel":0,"aide_parents_mensuelle":100,"epargne_depart":2750,"ville_origine":"Trois-Rivières","transport":"A une voiture déjà payée","atout":"Tu as un rabais d'employé de 30 % sur l'équipement et les vêtements de sport.","handicap":"Tu as un chien de taille moyenne : nourriture et vétérinaire environ 90 $ par mois, et l'appartement doit accepter les chiens.","coloc":{"prenom":"Patrick","occupation":"Journalier dans une usine","revenu_mensuel_approx":2100,"description":"Direct et travaillant, il aime les règles simples et claires.","handicap":"Il a besoin de la case de stationnement incluse pour son camion : s'il n'y en a qu'une, c'est à négocier.","part_couts_partages":"50 %"}},{"numero":14,"prenom":"Mathis","situation":"etudes","situation_detail":"Études : Techniques de travail social au Cégep de Trois-Rivières. Emploi : Commis dans une librairie-café.","ecole":"Cégep de Trois-Rivières","programme":"Techniques de travail social","employeur":"Commis dans une librairie-café","taux_horaire":16.6,"heures_semaine":12,"revenu_brut_mensuel":865,"revenu_net_mensuel":760,"autre_revenu_mensuel":0,"aide_parents_mensuelle":350,"epargne_depart":1350,"ville_origine":"Louiseville","transport":"Pas de permis de conduire","atout":"Tes parents te donnent le lit double, la commode et la lampe de leur chambre d'amis : ta chambre est presque meublée.","handicap":"Ton horaire de cours est très chargé : impossible de travailler plus de 12 heures par semaine, ton revenu est serré.","coloc":{"prenom":"Andréanne","occupation":"Étudiante en éducation à l'enfance","revenu_mensuel_approx":950,"description":"Patiente et rieuse, elle fait de très bons desserts.","handicap":"Elle pratique la clarinette une heure par jour en fin d'après-midi : les heures sont à fixer dans l'entente.","part_couts_partages":"50 %"}},{"numero":15,"prenom":"Inès","situation":"emploi","situation_detail":"Premier emploi : Réceptionniste dans une clinique dentaire.","ecole":null,"programme":null,"employeur":"Réceptionniste dans une clinique dentaire","taux_horaire":18.2,"heures_semaine":32,"revenu_brut_mensuel":2525,"revenu_net_mensuel":1995,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":3300,"ville_origine":"Bécancour","transport":"A une voiture déjà payée","atout":"La clinique paie ton stationnement au travail et le repas du vendredi.","handicap":"Tu portes des lentilles cornéennes : environ 55 $ par mois de lentilles et de produits, chaque mois.","coloc":{"prenom":"Steven","occupation":"Apprenti plombier","revenu_mensuel_approx":1800,"description":"Serviable et matinal, il connaît la plomberie d'un appartement sur le bout des doigts.","handicap":"Il se lève à 4 h 45 pour les chantiers : silence et salle de bain très tôt le matin.","part_couts_partages":"50 %"}},{"numero":16,"prenom":"Raphaël","situation":"etudes","situation_detail":"Études : Techniques de comptabilité et de gestion au Collège Laflèche. Emploi : Commis dans une épicerie fine.","ecole":"Collège Laflèche","programme":"Techniques de comptabilité et de gestion","employeur":"Commis dans une épicerie fine","taux_horaire":16.9,"heures_semaine":14,"revenu_brut_mensuel":1025,"revenu_net_mensuel":900,"autre_revenu_mensuel":0,"aide_parents_mensuelle":200,"epargne_depart":2200,"ville_origine":"Saint-Narcisse","transport":"A son permis, pas d'auto","atout":"Ton père est menuisier : il va t'aider à fabriquer ta table de cuisine et des tablettes, plusieurs meubles de moins à acheter.","handicap":"Ton emploi est à l'autre bout de la ville : le laissez-passer mensuel d'autobus est obligatoire pour toi.","coloc":{"prenom":"Cynthia","occupation":"Technicienne en pharmacie","revenu_mensuel_approx":1350,"description":"Minutieuse et calme, elle aime les listes et les horaires affichés.","handicap":"Elle a un lapin qui vit librement dans sa chambre : les règles de ménage et d'odeurs sont à prévoir.","part_couts_partages":"50 %"}},{"numero":17,"prenom":"Sofia","situation":"emploi","situation_detail":"Premier emploi : Cheffe d'équipe dans un café.","ecole":null,"programme":null,"employeur":"Cheffe d'équipe dans un café","taux_horaire":17.9,"heures_semaine":30,"revenu_brut_mensuel":2325,"revenu_net_mensuel":1910,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":1850,"ville_origine":"Trois-Rivières","transport":"A une voiture déjà payée","atout":"Ta voiture est payée et tu as déjà tes produits ménagers et tes outils de départ.","handicap":"Ta voiture est vieille : compte environ 100 $ par mois d'entretien et de réparations en moyenne.","coloc":{"prenom":"Francis","occupation":"Étudiant en informatique et agent de centre d'appels","revenu_mensuel_approx":1050,"description":"Geek sympathique, très autonome, il vit beaucoup dans sa chambre.","handicap":"Il fait du télétravail trois jours par semaine : il a besoin de silence le jour et d'un internet rapide et fiable, le forfait doit être choisi en conséquence.","part_couts_partages":"50 %"}},{"numero":18,"prenom":"Alexis","situation":"etudes","situation_detail":"Études : Sciences de la nature au Cégep de Trois-Rivières. Emploi : Tuteur en mathématiques au cégep.","ecole":"Cégep de Trois-Rivières","programme":"Sciences de la nature","employeur":"Tuteur en mathématiques au cégep","taux_horaire":18.5,"heures_semaine":10,"revenu_brut_mensuel":800,"revenu_net_mensuel":705,"autre_revenu_mensuel":125,"aide_parents_mensuelle":400,"epargne_depart":1700,"ville_origine":"Shawinigan","transport":"Pas de permis de conduire","atout":"Tu reçois une bourse d'excellence de 125 $ par mois.","handicap":"Ton horaire d'études est très chargé : tu ne peux pas travailler plus de 10 heures par semaine.","coloc":{"prenom":"Josiane","occupation":"Préposée à l'entretien ménager dans un hôtel","revenu_mensuel_approx":1200,"description":"Efficace et franche, elle aime les horaires de corvées affichés.","handicap":"Elle travaille presque toutes les fins de semaine : les corvées communes doivent être planifiées dans la semaine.","part_couts_partages":"50 %"}},{"numero":19,"prenom":"Camille","situation":"etudes","situation_detail":"Études : DEP en mécanique automobile au Bel-Avenir / Qualitech (formation professionnelle). Emploi : Commis aux pièces la fin de semaine.","ecole":"Bel-Avenir / Qualitech (formation professionnelle)","programme":"DEP en mécanique automobile","employeur":"Commis aux pièces la fin de semaine","taux_horaire":17.25,"heures_semaine":14,"revenu_brut_mensuel":1045,"revenu_net_mensuel":920,"autre_revenu_mensuel":0,"aide_parents_mensuelle":250,"epargne_depart":2050,"ville_origine":"Saint-Tite","transport":"A une voiture déjà payée","atout":"Ton DEP te donne accès à l'atelier de l'école : tu répares ta voiture gratuitement, l'entretien coûte presque rien.","handicap":"Tu as besoin de ta voiture pour te rendre au centre de formation : environ 160 $ d'essence par mois, aucun autobus pratique.","coloc":{"prenom":"Mikaël","occupation":"Soudeur dans un atelier","revenu_mensuel_approx":2000,"description":"Bon vivant et ponctuel, il se couche tôt parce qu'il se lève à 5 h.","handicap":"Il ronfle très fort : au moment de choisir l'appartement, des chambres éloignées l'une de l'autre seraient un vrai plus.","part_couts_partages":"50 %"}},{"numero":20,"prenom":"Yanis","situation":"emploi","situation_detail":"Premier emploi : Journalier dans une usine de Shawinigan.","ecole":null,"programme":null,"employeur":"Journalier dans une usine de Shawinigan","taux_horaire":18.4,"heures_semaine":40,"revenu_brut_mensuel":3190,"revenu_net_mensuel":2520,"autre_revenu_mensuel":60,"aide_parents_mensuelle":0,"epargne_depart":2400,"ville_origine":"Shawinigan","transport":"A une voiture déjà payée","atout":"L'usine te verse une prime de transport de 60 $ par mois.","handicap":"Ton travail est très physique et tu manges beaucoup : compte environ 40 $ de plus par mois sur ta part d'épicerie.","coloc":{"prenom":"Tania","occupation":"Agente au service à la clientèle","revenu_mensuel_approx":1500,"description":"Extravertie et généreuse, elle adore recevoir.","handicap":"Elle reçoit des amis presque chaque vendredi soir : les règles pour les invités sont à fixer dès le départ.","part_couts_partages":"50 %"}},{"numero":21,"prenom":"Florence","situation":"etudes","situation_detail":"Études : Techniques d'éducation à l'enfance au Collège Laflèche. Emploi : Animatrice en service de garde.","ecole":"Collège Laflèche","programme":"Techniques d'éducation à l'enfance","employeur":"Animatrice en service de garde","taux_horaire":16.6,"heures_semaine":15,"revenu_brut_mensuel":1080,"revenu_net_mensuel":950,"autre_revenu_mensuel":0,"aide_parents_mensuelle":150,"epargne_depart":2600,"ville_origine":"Champlain","transport":"A son permis, pas d'auto","atout":"Tes parents te donnent leur ancien divan-lit et leur télévision.","handicap":"Tu gardes tes deux jeunes frères un soir par semaine chez tes parents : environ 40 $ par mois d'autobus régional.","coloc":{"prenom":"Dominic","occupation":"Étudiant en techniques de comptabilité","revenu_mensuel_approx":980,"description":"Méthodique et discret, il adore les chiffriers bien faits.","handicap":"Il étudie en écoutant de la musique sans casque en soirée : le silence après 22 h est à négocier.","part_couts_partages":"50 %"}},{"numero":22,"prenom":"Samuel","situation":"etudes","situation_detail":"Études : Technologie de l'architecture au Cégep de Trois-Rivières. Emploi : Agent de sécurité la fin de semaine.","ecole":"Cégep de Trois-Rivières","programme":"Technologie de l'architecture","employeur":"Agent de sécurité la fin de semaine","taux_horaire":17.75,"heures_semaine":16,"revenu_brut_mensuel":1230,"revenu_net_mensuel":1045,"autre_revenu_mensuel":0,"aide_parents_mensuelle":100,"epargne_depart":3100,"ville_origine":"Grand-Mère","transport":"A un vélo électrique, pas d'auto","atout":"Tu as un vélo électrique pour tes déplacements en ville : transport presque gratuit une bonne partie de l'année.","handicap":"L'hiver, le vélo est rangé : tu devras payer l'autobus de décembre à mars, à prévoir dans tes calculs pour l'année.","coloc":{"prenom":"Carolane","occupation":"Technicienne en éducation spécialisée en stage","revenu_mensuel_approx":1150,"description":"Organisée et douce, elle prépare ses rapports au salon.","handicap":"Elle a besoin d'un coin de travail au salon pour ses rapports de stage : le salon n'est pas libre en tout temps.","part_couts_partages":"50 %"}},{"numero":23,"prenom":"Amélie","situation":"emploi","situation_detail":"Premier emploi : Assistante technique en pharmacie.","ecole":null,"programme":null,"employeur":"Assistante technique en pharmacie","taux_horaire":17.6,"heures_semaine":34,"revenu_brut_mensuel":2595,"revenu_net_mensuel":2050,"autre_revenu_mensuel":0,"aide_parents_mensuelle":200,"epargne_depart":2900,"ville_origine":"Nicolet","transport":"A une voiture déjà payée","atout":"Tu as un rabais d'employé de 20 % à la pharmacie : produits d'hygiène et d'entretien moins chers.","handicap":"Tes horaires sortent seulement deux semaines à l'avance : l'organisation des repas communs demande de la souplesse.","coloc":{"prenom":"Sébastien","occupation":"Cuisinier dans un bistro","revenu_mensuel_approx":1600,"description":"Créatif en cuisine, il ramène souvent des surplus du travail.","handicap":"Il propose de cuisiner pour deux, mais à des heures tardives : repas communs ou séparés certains soirs, c'est à décider.","part_couts_partages":"50 %"}},{"numero":24,"prenom":"Tristan","situation":"etudes","situation_detail":"Études : DEP en secrétariat au Bel-Avenir / Qualitech (formation professionnelle). Emploi : Commis de bureau à temps partiel dans une clinique.","ecole":"Bel-Avenir / Qualitech (formation professionnelle)","programme":"DEP en secrétariat","employeur":"Commis de bureau à temps partiel dans une clinique","taux_horaire":17.1,"heures_semaine":18,"revenu_brut_mensuel":1335,"revenu_net_mensuel":1135,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":1450,"ville_origine":"Saint-Grégoire","transport":"Pas de permis de conduire","atout":"Ta tante te donne un matelas double presque neuf et une base de lit.","handicap":"Ton épargne de départ est faible : ton installation devra être presque entièrement usagée et bien négociée.","coloc":{"prenom":"Hélène","occupation":"Employée à la bibliothèque municipale","revenu_mensuel_approx":1400,"description":"Calme et cultivée, elle fait du télétravail deux jours par semaine.","handicap":"Pendant son télétravail, elle prend ses appels dans le salon : un certain silence est demandé le jour.","part_couts_partages":"50 %"}},{"numero":25,"prenom":"Jade","situation":"emploi","situation_detail":"Premier emploi : Aide-éducatrice dans un service de garde.","ecole":null,"programme":null,"employeur":"Aide-éducatrice dans un service de garde","taux_horaire":17.3,"heures_semaine":33,"revenu_brut_mensuel":2475,"revenu_net_mensuel":1955,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":2150,"ville_origine":"Trois-Rivières","transport":"A son permis, pas d'auto","atout":"Tes dîners sont fournis au travail : environ 50 $ d'épicerie de moins par mois.","handicap":"Tu commences à 6 h 30 le matin : il faut habiter près du travail ou avoir un transport fiable très tôt, les autobus ne passent pas partout à cette heure.","coloc":{"prenom":"Jonathan","occupation":"Étudiant en techniques de génie mécanique","revenu_mensuel_approx":1000,"description":"Sportif et de bonne humeur, toujours prêt à aider à déménager des meubles.","handicap":"Son équipement de hockey prend de la place et sent fort : un rangement fermé dans l'entrée est à prévoir.","part_couts_partages":"50 %"}},{"numero":26,"prenom":"Olivier","situation":"etudes","situation_detail":"Études : Techniques de génie mécanique au Cégep de Trois-Rivières. Emploi : Commis de dépanneur de nuit la fin de semaine.","ecole":"Cégep de Trois-Rivières","programme":"Techniques de génie mécanique","employeur":"Commis de dépanneur de nuit la fin de semaine","taux_horaire":18,"heures_semaine":14,"revenu_brut_mensuel":1090,"revenu_net_mensuel":960,"autre_revenu_mensuel":0,"aide_parents_mensuelle":250,"epargne_depart":1800,"ville_origine":"Saint-Étienne-des-Grès","transport":"A son permis, pas d'auto","atout":"Ton emploi de nuit paie une prime et tes repas de nuit sont fournis par l'employeur.","handicap":"Tu dors le jour la fin de semaine : le secteur de l'appartement doit être calme le jour, c'est un critère de choix.","coloc":{"prenom":"Marie-Pier","occupation":"Infirmière auxiliaire","revenu_mensuel_approx":2050,"description":"Professionnelle et indépendante, elle a des horaires qui tournent jour, soir et nuit.","handicap":"Ses horaires rotatifs rendent les soupers communs imprévisibles : l'épicerie commune doit prévoir des plats individuels parfois.","part_couts_partages":"50 %"}},{"numero":27,"prenom":"Nadia","situation":"emploi","situation_detail":"Premier emploi : Commis comptable dans un cabinet de Trois-Rivières.","ecole":null,"programme":null,"employeur":"Commis comptable dans un cabinet de Trois-Rivières","taux_horaire":18.9,"heures_semaine":37.5,"revenu_brut_mensuel":3070,"revenu_net_mensuel":2425,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":3600,"ville_origine":"Louiseville","transport":"A une voiture déjà payée","atout":"Ta sœur te donne ses meubles en partant en appartement meublé : lit, bureau, commode et table de chevet déjà réglés.","handicap":"Tu paies un cours du soir en ligne pour ta certification : 85 $ par mois, chaque mois.","coloc":{"prenom":"Alexandre","occupation":"Vendeur dans un magasin d'électronique","revenu_mensuel_approx":1700,"description":"Communicatif et branché, il connaît toutes les promotions de forfaits.","handicap":"Il prend souvent ses appels de vente dans le salon le soir : l'espace et le bruit sont à gérer dans l'entente.","part_couts_partages":"50 %"}},{"numero":28,"prenom":"Émile","situation":"etudes","situation_detail":"Études : Techniques de tourisme au Collège Laflèche. Emploi : Commis dans une boutique du centre-ville.","ecole":"Collège Laflèche","programme":"Techniques de tourisme","employeur":"Commis dans une boutique du centre-ville","taux_horaire":16.6,"heures_semaine":16,"revenu_brut_mensuel":1150,"revenu_net_mensuel":1015,"autre_revenu_mensuel":0,"aide_parents_mensuelle":300,"epargne_depart":2300,"ville_origine":"Trois-Rivières","transport":"A son permis, pas d'auto","atout":"Tes parents habitent à 10 minutes à pied : lessive gratuite et repas du dimanche, de vraies économies.","handicap":"Ton emploi est saisonnier : l'hiver, tes heures tombent à 8 par semaine, ton budget doit prévoir les mois creux dans les calculs pour l'année.","coloc":{"prenom":"Valérie","occupation":"Étudiante en soins infirmiers à l'UQTR","revenu_mensuel_approx":1100,"description":"Rigoureuse et gentille, elle révise avec des fiches partout sur la table.","handicap":"En période d'examens, elle monopolise la table de cuisine pour étudier : les moments sont à négocier.","part_couts_partages":"50 %"}},{"numero":29,"prenom":"Sarah","situation":"etudes","situation_detail":"Études : DEP en assistance à la personne en établissement et à domicile au Bel-Avenir / Qualitech (formation professionnelle). Emploi : Aide à domicile la fin de semaine.","ecole":"Bel-Avenir / Qualitech (formation professionnelle)","programme":"DEP en assistance à la personne en établissement et à domicile","employeur":"Aide à domicile la fin de semaine","taux_horaire":18.25,"heures_semaine":15,"revenu_brut_mensuel":1185,"revenu_net_mensuel":1045,"autre_revenu_mensuel":45,"aide_parents_mensuelle":100,"epargne_depart":1650,"ville_origine":"Yamachiche","transport":"A une voiture déjà payée","atout":"Ton employeur rembourse ton kilométrage quand tu visites des clients : environ 45 $ par mois.","handicap":"Tu dois avoir une voiture fiable pour tes visites : essence et entretien environ 190 $ par mois.","coloc":{"prenom":"David","occupation":"Apprenti charpentier-menuisier","revenu_mensuel_approx":1750,"description":"Travaillant et ordonné au chantier, un peu moins à la maison.","handicap":"Il part en chantier à 5 h 30 et laisse souvent la salle de bain en désordre : les règles de ménage doivent être précises.","part_couts_partages":"50 %"}},{"numero":30,"prenom":"Louis","situation":"emploi","situation_detail":"Premier emploi : Apprenti technicien en réparation d'électroménagers.","ecole":null,"programme":null,"employeur":"Apprenti technicien en réparation d'électroménagers","taux_horaire":19,"heures_semaine":40,"revenu_brut_mensuel":3295,"revenu_net_mensuel":2600,"autre_revenu_mensuel":0,"aide_parents_mensuelle":0,"epargne_depart":4500,"ville_origine":"Shawinigan","transport":"A une voiture déjà payée","atout":"Tu répares toi-même les électroménagers : tu peux acheter des électroménagers à réparer pour presque rien.","handicap":"Tu suis une formation de certification deux samedis par mois : 70 $ par mois de frais et moins de temps pour les corvées.","coloc":{"prenom":"Stéphanie","occupation":"Graphiste pigiste","revenu_mensuel_approx":1500,"description":"Créative et posée, ses revenus changent d'un mois à l'autre.","handicap":"Ses revenus sont irréguliers : elle demande que les grosses dépenses communes soient toujours décidées à deux, jamais par surprise.","part_couts_partages":"50 %"}}];
+</script>
+
+<script>
+"use strict";
+var M = window.MoteurAppart;
+var fmt = M.formatMontant;
+var JOURS = ["Lundi","Mardi","Mercredi","Jeudi","Vendredi","Samedi","Dimanche"];
+function dossierVide(){
+  var pieces = {}; M.PIECES_CANONIQUES.forEach(function(p){ pieces[p]=[]; });
+  return {
+    eleve:{nom:"", groupe:"", profilNumero:""},
+    s1:{revenuNet:0, autreRevenu:0, aideParents:0, epargneDepart:0, ententeColocation:""},
+    s2:{annonces:[{adresse:"",loyer:0,inclusions:"",distanceKm:"",remarque:""},{adresse:"",loyer:0,inclusions:"",distanceKm:"",remarque:""},{adresse:"",loyer:0,inclusions:"",distanceKm:"",remarque:""}], choix:null, justification:"", captureAnnonce:""},
+    s3:{pieces:pieces, electro:[]},
+    s4:{electricite:{taille:"", kwhManuel:0}, internet:{fournisseur:"",prix:0,capture:""}, cellulaire:{fournisseur:"",prix:0,capture:""}, assurance:{compagnie:"",prix:0}},
+    s5:{transport:{mode:"autobus-sttr", cout:0, justification:""}, menus:JOURS.map(function(j){ return {jour:j, dejeuner:{nom:"",ingredients:[]}, diner:{nom:"",ingredients:[]}, souper:{nom:"",ingredients:[]}, collations:{nom:"",ingredients:[]}}; }), courses:[]},
+    s6:{autresDepenses:[], ajustementsAnnuels:0, explicationDeficit:"", imprevu:{numeroCarte:"", montant:0, ajustementTexte:""}},
+    s7:{surprise:"", autrement:"", colocOuSeul:"", concepts:[]}
+  };
+}
+var dossier = dossierVide();
+var profilParNumero = {}; PROFILS_DATA.forEach(function(p){ profilParNumero[p.numero]=p; });
+function el(id){ return document.getElementById(id); }
+function valNum(id){ var e=el(id); return e ? M.num(e.value) : 0; }
+function valTxt(id){ var e=el(id); return e ? e.value : ""; }
+function setVal(id,v){ var e=el(id); if(e) e.value = (v==null?"":v); }
+function slugNom(n){ return (n||"sans-nom").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"") || "sans-nom"; }
+function cleSauvegarde(){ return "partir-appart-" + slugNom(dossier.eleve.nom) + "-profil-" + (dossier.eleve.profilNumero || "X"); }
+var horlogeSauvegarde = null;
+function sauvegarder(){
+  try{
+    var cle = cleSauvegarde();
+    localStorage.setItem(cle, JSON.stringify(dossier));
+    localStorage.setItem("partir-appart-dernier", cle);
+    var h = new Date(); var hh = String(h.getHours()).padStart(2,"0")+":"+String(h.getMinutes()).padStart(2,"0")+":"+String(h.getSeconds()).padStart(2,"0");
+    el("mention-sauvegarde").textContent = "Sauvegardé automatiquement à " + hh;
+  }catch(e){}
+}
+function sauvegarderDiffere(){ if(horlogeSauvegarde) clearTimeout(horlogeSauvegarde); horlogeSauvegarde = setTimeout(sauvegarder, 250); }
+function chargerDernier(){
+  try{ var cle = localStorage.getItem("partir-appart-dernier"); if(!cle) return; var brut = localStorage.getItem(cle); if(!brut) return; var d = JSON.parse(brut); if(d && d.s1) dossier = fusionner(dossierVide(), d); }catch(e){}
+}
+function fusionner(base, src){
+  if(Array.isArray(src)) return src;
+  if(src && typeof src==="object"){ Object.keys(src).forEach(function(k){ if(base[k] && typeof base[k]==="object" && !Array.isArray(base[k]) && src[k] && typeof src[k]==="object" && !Array.isArray(src[k])) fusionner(base[k], src[k]); else base[k]=src[k]; }); }
+  return base;
+}
+// Construction des zones dynamiques
+function construireS2(){
+  var cont = el("s2-annonces"); cont.innerHTML="";
+  dossier.s2.annonces.forEach(function(a, idx){
+    var div = document.createElement("div"); div.className="profil-carte";
+    div.innerHTML = "<h3>Annonce "+(idx+1)+"</h3>";
+    var grille = document.createElement("div"); grille.className="grille";
+    grille.innerHTML =
+      "<div><label>Adresse ou secteur</label><input type='text' data-s2='"+idx+"' data-champ='adresse'></div>"+
+      "<div><label>Loyer ($)</label><input type='number' step='0.01' min='0' data-s2='"+idx+"' data-champ='loyer'></div>"+
+      "<div><label>Inclusions</label><input type='text' data-s2='"+idx+"' data-champ='inclusions'></div>"+
+      "<div><label>Distance de l'école ou du travail (km)</label><input type='number' step='0.1' min='0' data-s2='"+idx+"' data-champ='distanceKm'></div>"+
+      "<div><label>Remarque</label><input type='text' data-s2='"+idx+"' data-champ='remarque'></div>";
+    div.appendChild(grille);
+    var radio = document.createElement("label"); radio.className="radio-ligne";
+    radio.innerHTML = "<input type='radio' name='s2-choix' value='"+idx+"'> Choisir cette annonce";
+    div.appendChild(radio);
+    cont.appendChild(div);
+  });
+  cont.querySelectorAll("input[data-s2]").forEach(function(inp){
+    inp.addEventListener("input", function(){
+      var i = Number(inp.getAttribute("data-s2")); var c = inp.getAttribute("data-champ");
+      dossier.s2.annonces[i][c] = (c==="loyer"||c==="distanceKm") ? M.num(inp.value) : inp.value;
+      majTout();
+    });
+  });
+  cont.querySelectorAll("input[name='s2-choix']").forEach(function(r){
+    r.addEventListener("change", function(){ dossier.s2.choix = Number(r.value); majTout(); });
+  });
+}
+function construireS3(){
+  var cont = el("s3-pieces"); cont.innerHTML="";
+  M.PIECES_CANONIQUES.forEach(function(piece){
+    var bloc = document.createElement("div");
+    var titre = document.createElement("h3"); titre.style.cssText="font-size:22px;margin:16px 0 4px"; titre.textContent = piece; bloc.appendChild(titre);
+    if(piece==="La chambre de mon coloc"){ var n=document.createElement("div"); n.className="note"; n.textContent="Le coloc apporte ses meubles : total à 0 $ pour l'élève. Ajoute une ligne de note au besoin."; bloc.appendChild(n); }
+    var table = document.createElement("table");
+    table.innerHTML = "<thead><tr><th>Item</th><th>Prix ($)</th><th>État</th><th>Type</th><th></th></tr></thead>";
+    var tbody = document.createElement("tbody"); tbody.id = "tbody-piece-" + slugNom(piece);
+    table.appendChild(tbody); bloc.appendChild(table);
+    var btn = document.createElement("button"); btn.type="button"; btn.className="secondaire"; btn.textContent="Ajouter un item - " + piece;
+    btn.addEventListener("click", function(){ dossier.s3.pieces[piece].push({nom:"",prix:0,etat:"usagé",type:(piece==="Ma chambre"?"personnel":"partagé")}); remplirS3(); majTout(); });
+    bloc.appendChild(btn);
+    var sous = document.createElement("div"); sous.className="total-ligne";
+    sous.innerHTML = "<span>Sous-total de la pièce (ta part)</span><strong id='sous-piece-"+slugNom(piece)+"'>0,00 $</strong>";
+    bloc.appendChild(sous);
+    cont.appendChild(bloc);
+    remplirPiece(piece);
+  });
+  remplirElectro();
+}
+function remplirPiece(piece){
+  var tbody = el("tbody-piece-" + slugNom(piece)); if(!tbody) return; tbody.innerHTML="";
+  (dossier.s3.pieces[piece]||[]).forEach(function(l, idx){
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td><input type='text'></td><td><input type='number' step='0.01' min='0'></td><td><select><option value='neuf'>Neuf</option><option value='usagé'>Usagé</option></select></td><td><select><option value='partagé'>Partagé</option><option value='personnel'>Personnel</option></select></td><td><button type='button' class='secondaire'>Retirer</button></td>";
+    var ins = tr.querySelectorAll("input,select");
+    ins[0].value = l.nom||""; ins[1].value = (l.prix==null?"":l.prix); ins[2].value = l.etat||"usagé"; ins[3].value = l.type||"partagé";
+    ins[0].addEventListener("input", function(){ l.nom = ins[0].value; sauvegarderDiffere(); });
+    ins[1].addEventListener("input", function(){ l.prix = M.num(ins[1].value); majTout(); });
+    ins[2].addEventListener("change", function(){ l.etat = ins[2].value; sauvegarderDiffere(); });
+    ins[3].addEventListener("change", function(){ l.type = ins[3].value; majTout(); });
+    tr.querySelector("button").addEventListener("click", function(){ dossier.s3.pieces[piece].splice(idx,1); remplirS3(); majTout(); });
+    tbody.appendChild(tr);
+  });
+}
+function remplirS3(){ M.PIECES_CANONIQUES.forEach(remplirPiece); remplirElectro(); }
+function remplirElectro(){
+  var tbody = el("s3-electro"); tbody.innerHTML="";
+  dossier.s3.electro.forEach(function(l, idx){
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td><input type='text'></td><td><input type='number' step='0.01' min='0'></td><td><select><option value='neuf'>Neuf</option><option value='usagé'>Usagé</option></select></td><td><input type='text' placeholder='Nom du fichier de capture'></td><td><button type='button' class='secondaire'>Retirer</button></td>";
+    var ins = tr.querySelectorAll("input,select");
+    ins[0].value=l.nom||""; ins[1].value=(l.prix==null?"":l.prix); ins[2].value=l.etat||"usagé"; ins[3].value=l.capture||"";
+    ins[0].addEventListener("input", function(){ l.nom=ins[0].value; sauvegarderDiffere(); });
+    ins[1].addEventListener("input", function(){ l.prix=M.num(ins[1].value); majTout(); });
+    ins[2].addEventListener("change", function(){ l.etat=ins[2].value; sauvegarderDiffere(); });
+    ins[3].addEventListener("input", function(){ l.capture=ins[3].value; sauvegarderDiffere(); });
+    tr.querySelector("button").addEventListener("click", function(){ dossier.s3.electro.splice(idx,1); remplirElectro(); majTout(); });
+    tbody.appendChild(tr);
+  });
+}
+function construireS5(){
+  var cont = el("s5-menus"); cont.innerHTML="";
+  dossier.s5.menus.forEach(function(menu){
+    M.TYPES_REPAS.forEach(function(pair){ menu[pair[0]] = M.repasNormalise(menu[pair[0]]); });
+    var bloc = document.createElement("div");
+    bloc.className = "profil-carte";
+    var titre = document.createElement("h3"); titre.textContent = menu.jour; bloc.appendChild(titre);
+    M.TYPES_REPAS.forEach(function(pair){
+      var repas = menu[pair[0]];
+      var sec = document.createElement("div");
+      var lab = document.createElement("label"); lab.textContent = pair[1] + " - nom du repas"; sec.appendChild(lab);
+      var inpNom = document.createElement("input"); inpNom.type = "text"; inpNom.value = repas.nom || "";
+      inpNom.addEventListener("input", function(){ repas.nom = inpNom.value; sauvegarderDiffere(); });
+      sec.appendChild(inpNom);
+      var contIng = document.createElement("div"); sec.appendChild(contIng);
+      var ligneTotal = document.createElement("div"); ligneTotal.className = "total-ligne";
+      var spanLib = document.createElement("span"); spanLib.textContent = "Coût de la nourriture utilisée pour ce repas"; ligneTotal.appendChild(spanLib);
+      var fortTotal = document.createElement("strong"); ligneTotal.appendChild(fortTotal);
+      sec.appendChild(ligneTotal);
+      var btnAjout = document.createElement("button"); btnAjout.type = "button"; btnAjout.className = "secondaire"; btnAjout.textContent = "Ajouter un ingrédient";
+      sec.appendChild(btnAjout);
+      function majSousTotal(){ var s = 0; repas.ingredients.forEach(function(l){ s += M.coutIngredient(l); }); fortTotal.textContent = fmt(M.round2(s)); }
+      function remplirIngredients(){
+        contIng.innerHTML = "";
+        repas.ingredients.forEach(function(l, idx){
+          var rangee = document.createElement("div"); rangee.className = "grille2"; rangee.style.alignItems = "end";
+          function champ(texte, valeur, pas, estTexte){
+            var wrap = document.createElement("div");
+            var lb = document.createElement("label"); lb.textContent = texte; wrap.appendChild(lb);
+            var inp = document.createElement("input"); inp.type = estTexte ? "text" : "number";
+            if(!estTexte){ inp.step = pas; inp.min = "0"; }
+            inp.value = (valeur == null ? "" : valeur);
+            wrap.appendChild(inp); rangee.appendChild(wrap); return inp;
+          }
+          var iNom = champ("Ingrédient", l.nom || "", null, true);
+          var iPrix = champ("Prix de l'article ($)", l.prix, "0.01", false);
+          var iPa = champ("Portions dans l'achat", l.portionsAchat, "1", false);
+          var iPu = champ("Portions utilisées ici", l.portionsUtilisees, "1", false);
+          var wrapCout = document.createElement("div");
+          var lbC = document.createElement("label"); lbC.textContent = "Coût utilisé"; wrapCout.appendChild(lbC);
+          var spanCout = document.createElement("div"); spanCout.style.padding = "8px 0"; spanCout.style.fontWeight = "700"; wrapCout.appendChild(spanCout);
+          rangee.appendChild(wrapCout);
+          var btnRet = document.createElement("button"); btnRet.type = "button"; btnRet.className = "secondaire"; btnRet.textContent = "Retirer";
+          rangee.appendChild(btnRet);
+          function sync(){ spanCout.textContent = fmt(M.coutIngredient(l)); majSousTotal(); }
+          iNom.addEventListener("input", function(){ l.nom = iNom.value; sauvegarderDiffere(); });
+          iPrix.addEventListener("input", function(){ l.prix = M.num(iPrix.value); sync(); majTout(); });
+          iPa.addEventListener("input", function(){ l.portionsAchat = M.num(iPa.value); sync(); majTout(); });
+          iPu.addEventListener("input", function(){ l.portionsUtilisees = M.num(iPu.value); sync(); majTout(); });
+          btnRet.addEventListener("click", function(){ repas.ingredients.splice(idx, 1); remplirIngredients(); majTout(); });
+          contIng.appendChild(rangee);
+          sync();
+        });
+        majSousTotal();
+      }
+      btnAjout.addEventListener("click", function(){ repas.ingredients.push({nom:"", prix:0, portionsAchat:1, portionsUtilisees:1}); remplirIngredients(); majTout(); });
+      remplirIngredients();
+      bloc.appendChild(sec);
+    });
+    cont.appendChild(bloc);
+  });
+  remplirAutres();
+}
+function remplirAutres(){
+  var tbody=el("s6-autres"); if(!tbody) return; tbody.innerHTML="";
+  dossier.s6.autresDepenses.forEach(function(l,idx){
+    var tr=document.createElement("tr");
+    tr.innerHTML="<td><input type='text'></td><td><input type='number' step='0.01'></td><td><button type='button' class='secondaire'>Retirer</button></td>";
+    var ins=tr.querySelectorAll("input"); ins[0].value=l.nom||""; ins[1].value=(l.montant==null?"":l.montant);
+    ins[0].addEventListener("input",function(){ l.nom=ins[0].value; sauvegarderDiffere(); });
+    ins[1].addEventListener("input",function(){ l.montant=M.num(ins[1].value); majTout(); });
+    tr.querySelector("button").addEventListener("click",function(){ dossier.s6.autresDepenses.splice(idx,1); remplirAutres(); majTout(); });
+    tbody.appendChild(tr);
+  });
+}
+function afficherProfil(){
+  var cont=el("profil-carte"); var num=dossier.eleve.profilNumero; var p=profilParNumero[num];
+  if(!p){ cont.innerHTML=""; el("s1-rappel-coloc").textContent=""; return; }
+  cont.innerHTML="<div class='profil-carte'><h3>Profil "+p.numero+" - "+echapper(p.prenom)+"</h3>"+
+  "<p><strong>Situation :</strong> "+echapper(p.situation_detail)+"</p>"+
+  (p.ecole?"<p><strong>École :</strong> "+echapper(p.ecole)+" - "+echapper(p.programme||"")+"</p>":"")+
+  "<p><strong>Emploi :</strong> "+echapper(p.employeur||"")+" - "+p.taux_horaire.toFixed(2).replace(".",",")+" $/h, "+p.heures_semaine+" h/semaine</p>"+
+  "<p><strong>Revenu net mensuel :</strong> "+fmt(p.revenu_net_mensuel)+" - <strong>Autre revenu :</strong> "+fmt(p.autre_revenu_mensuel)+" - <strong>Aide des parents :</strong> "+fmt(p.aide_parents_mensuelle)+" - <strong>Épargne de départ :</strong> "+fmt(p.epargne_depart)+"</p>"+
+  "<p><strong>Ville d'origine :</strong> "+echapper(p.ville_origine)+" - <strong>Transport :</strong> "+echapper(p.transport)+"</p>"+
+  "<p><strong>Atout :</strong> "+echapper(p.atout)+"</p>"+
+  "<p><strong>Handicap :</strong> "+echapper(p.handicap)+"</p>"+
+  "<p><strong>Coloc :</strong> "+echapper(p.coloc.prenom)+" - "+echapper(p.coloc.occupation)+" - Revenu approx. "+fmt(p.coloc.revenu_mensuel_approx)+"</p>"+
+  "<p>"+echapper(p.coloc.description)+"</p>"+
+  "<p><strong>Handicap du coloc :</strong> "+echapper(p.coloc.handicap)+"</p>"+
+  "<p><strong>Part des coûts partagés :</strong> "+echapper(p.coloc.part_couts_partages)+"</p></div>";
+  el("s1-rappel-coloc").textContent = "Handicap de ton coloc ("+p.coloc.prenom+") à régler dans l'entente : " + p.coloc.handicap;
+}
+function echapper(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function remplirFormulaire(){
+  setVal("eleve-nom", dossier.eleve.nom); setVal("eleve-groupe", dossier.eleve.groupe); setVal("eleve-profil", dossier.eleve.profilNumero);
+  setVal("s1-net", dossier.s1.revenuNet); setVal("s1-autre", dossier.s1.autreRevenu); setVal("s1-aide", dossier.s1.aideParents); setVal("s1-epargne", dossier.s1.epargneDepart); setVal("s1-entente", dossier.s1.ententeColocation);
+  // S2 valeurs
+  document.querySelectorAll("input[data-s2]").forEach(function(inp){ var i=Number(inp.getAttribute("data-s2")); var c=inp.getAttribute("data-champ"); inp.value = dossier.s2.annonces[i][c]==null?"":dossier.s2.annonces[i][c]; });
+  document.querySelectorAll("input[name='s2-choix']").forEach(function(r){ r.checked = (dossier.s2.choix!=null && Number(r.value)===Number(dossier.s2.choix)); });
+  setVal("s2-justification", dossier.s2.justification); setVal("s2-capture", dossier.s2.captureAnnonce);
+  remplirS3();
+  setVal("s4-taille", dossier.s4.electricite.taille); setVal("s4-kwh-manuel", dossier.s4.electricite.kwhManuel);
+  setVal("s4-internet-fournisseur", dossier.s4.internet.fournisseur); setVal("s4-internet-prix", dossier.s4.internet.prix); setVal("s4-internet-capture", dossier.s4.internet.capture);
+  setVal("s4-cell-fournisseur", dossier.s4.cellulaire.fournisseur); setVal("s4-cell-prix", dossier.s4.cellulaire.prix); setVal("s4-cell-capture", dossier.s4.cellulaire.capture);
+  setVal("s4-ass-compagnie", dossier.s4.assurance.compagnie); setVal("s4-ass-prix", dossier.s4.assurance.prix);
+  setVal("s5-transport-mode", dossier.s5.transport.mode); setVal("s5-transport-cout", dossier.s5.transport.cout); setVal("s5-transport-justification", dossier.s5.transport.justification);
+  // menus : deja construits par construireS5 a partir du dossier
+  remplirAutres();
+  setVal("s6-ajustements", dossier.s6.ajustementsAnnuels); setVal("s6-explication", dossier.s6.explicationDeficit);
+  setVal("s6-imprevu-numero", dossier.s6.imprevu.numeroCarte); setVal("s6-imprevu-montant", dossier.s6.imprevu.montant); setVal("s6-imprevu-ajustement", dossier.s6.imprevu.ajustementTexte);
+  setVal("s7-surprise", dossier.s7.surprise); setVal("s7-autrement", dossier.s7.autrement); setVal("s7-coloc", dossier.s7.colocOuSeul);
+  document.querySelectorAll("#s7-concepts input[type=checkbox]").forEach(function(cb){ cb.checked = dossier.s7.concepts.indexOf(cb.value)!==-1; });
+  afficherProfil();
+}
+function majTout(){
+  // Recueillir les champs simples avant calcul pour garder l'etat a jour
+  dossier.eleve.nom = valTxt("eleve-nom"); dossier.eleve.groupe = valTxt("eleve-groupe");
+  dossier.s1.ententeColocation = valTxt("s1-entente");
+  dossier.s2.justification = valTxt("s2-justification"); dossier.s2.captureAnnonce = valTxt("s2-capture");
+  dossier.s4.internet.fournisseur = valTxt("s4-internet-fournisseur"); dossier.s4.internet.capture = valTxt("s4-internet-capture");
+  dossier.s4.cellulaire.fournisseur = valTxt("s4-cell-fournisseur"); dossier.s4.cellulaire.capture = valTxt("s4-cell-capture");
+  dossier.s4.assurance.compagnie = valTxt("s4-ass-compagnie");
+  dossier.s5.transport.justification = valTxt("s5-transport-justification");
+  dossier.s6.explicationDeficit = valTxt("s6-explication");
+  dossier.s6.imprevu.numeroCarte = valTxt("s6-imprevu-numero"); dossier.s6.imprevu.ajustementTexte = valTxt("s6-imprevu-ajustement");
+  dossier.s7.surprise = valTxt("s7-surprise"); dossier.s7.autrement = valTxt("s7-autrement"); dossier.s7.colocOuSeul = valTxt("s7-coloc");
+  var totaux = M.calculerTotaux(dossier);
+  // Bandeau
+  el("b-installation").textContent = fmt(totaux.installation);
+  el("b-mois").textContent = fmt(totaux.depensesMois);
+  el("b-revenus").textContent = fmt(totaux.revenusMois);
+  var soldeEl = el("b-solde"); soldeEl.textContent = fmt(totaux.solde); soldeEl.className = "val" + (totaux.solde<0 ? " negatif" : "");
+  // S3
+  M.PIECES_CANONIQUES.forEach(function(piece){ var s=el("sous-piece-"+slugNom(piece)); if(s) s.textContent = fmt(totaux.parPiece[piece]||0); });
+  el("s3-electro-total").textContent = fmt(totaux.electroBrut);
+  el("s3-electro-part").textContent = fmt(totaux.electroPart);
+  el("s3-installation").textContent = fmt(totaux.installation);
+  var pct = Math.min(100, totaux.installation/3500*100);
+  var jauge = el("s3-jauge"); jauge.style.width = pct+"%"; jauge.className = "jauge-barre" + (totaux.installation>3500 ? " depasse" : "");
+  el("s3-jauge-texte").textContent = fmt(totaux.installation) + " sur 3 500 $ (" + pct.toFixed(1).replace(".",",") + " %)";
+  el("s3-alerte-plafond").innerHTML = totaux.installation>3500 ? "<div class='alerte'>Plafond dépassé : installation de "+fmt(totaux.installation)+", au-dessus de 3 500 $.</div>" : "";
+  // S4 demarche
+  var elec = totaux.electricite;
+  el("s4-kwh-manuel-bloc").className = (dossier.s4.electricite.taille==="manuel" ? "" : "cache");
+  el("s4-demarche").textContent = !dossier.s4.electricite.taille ?
+    "Aucune taille choisie pour le moment : ton électricité est à 0 $. Choisis la taille de ton appartement ci-dessus et le calcul d'Hydro-Québec va apparaître ici, étape par étape." :
+    "Consommation : " + elec.kwh + " kWh pour 30 jours\n" +
+    "Frais d'accès au réseau : 0,46154 $ x 30 jours = " + fmt(elec.acces) + "\n" +
+    "Tranche 1 : " + elec.tranche1Kwh + " kWh x 0,07065 $ = " + fmt(elec.tranche1Montant) + "\n" +
+    "Tranche 2 : " + elec.tranche2Kwh + " kWh x 0,11142 $ = " + fmt(elec.tranche2Montant) + "\n" +
+    "Sous-total avant taxes : " + fmt(elec.sousTotal) + "\n" +
+    "Taxes 14,975 % : " + fmt(elec.taxes) + "\n" +
+    "Total pour l'appartement : " + fmt(elec.total) + "\n" +
+    "Ta part (50 %) : " + fmt(elec.part);
+  // S5
+  el("s5-epicerie-achats").textContent = fmt(totaux.epicerieAchatsTotale);
+  el("s5-epicerie-semaine").textContent = fmt(totaux.epicerieSemaineTotale);
+  el("s5-epicerie-part-semaine").textContent = fmt(totaux.epicerieSemainePart);
+  el("s5-epicerie-mois").textContent = fmt(totaux.epicerieMoisPart);
+  // S6
+  var b = totaux.budget;
+  el("s6-budget").innerHTML =
+    "<div class='total-ligne'><span>Revenus du mois (S1)</span><strong>"+fmt(b.revenusMois)+"</strong></div>"+
+    "<div class='total-ligne'><span>Part du loyer</span><strong>"+fmt(b.loyerPart)+"</strong></div>"+
+    "<div class='total-ligne'><span>Part d'électricité</span><strong>"+fmt(b.electricitePart)+"</strong></div>"+
+    "<div class='total-ligne'><span>Part d'internet</span><strong>"+fmt(b.internetPart)+"</strong></div>"+
+    "<div class='total-ligne'><span>Cellulaire</span><strong>"+fmt(b.cellulaire)+"</strong></div>"+
+    "<div class='total-ligne'><span>Assurance habitation</span><strong>"+fmt(b.assurance)+"</strong></div>"+
+    "<div class='total-ligne'><span>Transport</span><strong>"+fmt(b.transport)+"</strong></div>"+
+    "<div class='total-ligne'><span>Épicerie du mois (ta part)</span><strong>"+fmt(b.epicerieMoisPart)+"</strong></div>"+
+    "<div class='total-ligne'><span>Autres dépenses personnelles</span><strong>"+fmt(b.autresDepenses)+"</strong></div>"+
+    "<div class='total-ligne grand'><span>Total des dépenses du mois type</span><strong>"+fmt(b.depensesMois)+"</strong></div>"+
+    "<div class='total-ligne grand'><span>Solde du mois (revenus - dépenses)</span><strong>"+fmt(b.solde)+"</strong></div>"+
+    "<div class='total-ligne'><span>Premier mois (installation + mois type)</span><strong>"+fmt(b.premierMois)+"</strong></div>"+
+    "<div class='total-ligne'><span>Année (mois type x 12 + ajustements "+fmt(b.ajustementsAnnuels)+")</span><strong>"+fmt(b.annee)+"</strong></div>";
+  el("s6-deficit-bloc").className = (b.solde<0 ? "" : "cache");
+  sauvegarderDiffere();
+  return totaux;
+}
+function lierChampsSimples(){
+  var mapNum = [
+    ["s1-net", function(v){ dossier.s1.revenuNet=v; }], ["s1-autre", function(v){ dossier.s1.autreRevenu=v; }], ["s1-aide", function(v){ dossier.s1.aideParents=v; }], ["s1-epargne", function(v){ dossier.s1.epargneDepart=v; }],
+    ["s4-internet-prix", function(v){ dossier.s4.internet.prix=v; }], ["s4-cell-prix", function(v){ dossier.s4.cellulaire.prix=v; }], ["s4-ass-prix", function(v){ dossier.s4.assurance.prix=v; }],
+    ["s5-transport-cout", function(v){ dossier.s5.transport.cout=v; }], ["s6-ajustements", function(v){ dossier.s6.ajustementsAnnuels=v; }], ["s6-imprevu-montant", function(v){ dossier.s6.imprevu.montant=v; }], ["s4-kwh-manuel", function(v){ dossier.s4.electricite.kwhManuel=v; }]
+  ];
+  mapNum.forEach(function(pair){ el(pair[0]).addEventListener("input", function(){ pair[1](M.num(el(pair[0]).value)); majTout(); }); });
+  ["eleve-nom","eleve-groupe","s1-entente","s2-justification","s2-capture","s4-internet-fournisseur","s4-internet-capture","s4-cell-fournisseur","s4-cell-capture","s4-ass-compagnie","s5-transport-justification","s6-explication","s6-imprevu-numero","s6-imprevu-ajustement","s7-surprise","s7-autrement","s7-coloc"].forEach(function(id){ el(id).addEventListener("input", function(){ majTout(); }); });
+  el("eleve-profil").addEventListener("change", function(){
+    var num = el("eleve-profil").value; dossier.eleve.profilNumero = num==="" ? "" : Number(num);
+    var p = profilParNumero[dossier.eleve.profilNumero];
+    if(p){ dossier.s1.revenuNet=p.revenu_net_mensuel; dossier.s1.autreRevenu=p.autre_revenu_mensuel; dossier.s1.aideParents=p.aide_parents_mensuelle; dossier.s1.epargneDepart=p.epargne_depart; setVal("s1-net",p.revenu_net_mensuel); setVal("s1-autre",p.autre_revenu_mensuel); setVal("s1-aide",p.aide_parents_mensuelle); setVal("s1-epargne",p.epargne_depart); }
+    afficherProfil(); majTout();
+  });
+  el("s4-taille").addEventListener("change", function(){ dossier.s4.electricite.taille = el("s4-taille").value; majTout(); });
+  el("s5-transport-mode").addEventListener("change", function(){ dossier.s5.transport.mode = el("s5-transport-mode").value; majTout(); });
+  document.querySelectorAll("#s7-concepts input[type=checkbox]").forEach(function(cb){ cb.addEventListener("change", function(){ dossier.s7.concepts = Array.prototype.slice.call(document.querySelectorAll("#s7-concepts input[type=checkbox]:checked")).map(function(c){ return c.value; }); majTout(); }); });
+  el("btn-ajout-electro").addEventListener("click", function(){ dossier.s3.electro.push({nom:"",prix:0,etat:"usagé",capture:""}); remplirElectro(); majTout(); });
+
+  el("btn-ajout-autre").addEventListener("click", function(){ dossier.s6.autresDepenses.push({nom:"",montant:0}); remplirAutres(); majTout(); });
+}
+function exporterDossier(source, totauxPrecalcules){
+  var totaux = totauxPrecalcules || M.calculerTotaux(dossier);
+  var copie = JSON.parse(JSON.stringify(dossier));
+  copie.totaux = totaux; copie.totauxStockes = totaux;
+  copie.meta = {projet:"Partir en appart!", exporteLe:new Date().toISOString(), outil:"outil de dépôt vivant"};
+  var nomFichier = "appart-profil-" + String(dossier.eleve.profilNumero||"XX").padStart(2,"0") + "-" + slugNom(dossier.eleve.nom) + ".json";
+  var blob = new Blob([JSON.stringify(copie, null, 2)], {type:"application/json"});
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nomFichier; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+// Mode correction
+function afficherCorrection(importe){
+  if(!correctionDeverrouillee) return;
+  var cont = el("resultat-correction");
+  var propre = fusionner(dossierVide(), JSON.parse(JSON.stringify(importe)));
+  var recomptes = M.calculerTotaux(propre);
+  var stockes = importe.totauxStockes || importe.totaux || null;
+  var html = "";
+  html += "<h3 style='font-size:24px;margin:16px 0 6px'>Résumé prêt à noter</h3>";
+  html += "<p><strong>Élève :</strong> "+echapper(propre.eleve.nom||"")+" - <strong>Groupe :</strong> "+echapper(propre.eleve.groupe||"")+" - <strong>Profil :</strong> "+echapper(String(propre.eleve.profilNumero||""))+" ("+echapper((profilParNumero[propre.eleve.profilNumero]||{}).prenom||"")+")</p>";
+  html += "<table><thead><tr><th>Section</th><th>Montants clés</th></tr></thead><tbody>";
+  html += "<tr><td>S1 Profil et revenus (10 pts)</td><td>Revenus du mois : "+fmt(recomptes.revenusMois)+" - Épargne de départ : "+fmt(propre.s1.epargneDepart)+" - Entente : "+(propre.s1.ententeColocation && propre.s1.ententeColocation.trim() ? "remplie" : "vide")+"</td></tr>";
+  html += "<tr><td>S2 Logement (15 pts)</td><td>Loyer choisi : "+fmt(M.loyerChoisiDe(propre))+" - Ta part : "+fmt(recomptes.loyerPart)+" - Capture : "+echapper(propre.s2.captureAnnonce||"manquante")+"</td></tr>";
+  html += "<tr><td>S3 Installation (25 pts)</td><td>Installation (ta part) : "+fmt(recomptes.installation)+" - Électroménagers (ta part) : "+fmt(recomptes.electroPart)+"</td></tr>";
+  html += "<tr><td>S4 Services et forfaits (15 pts)</td><td>Électricité : total "+fmt(recomptes.electriciteTotal)+", ta part "+fmt(recomptes.electricitePart)+" - Internet (ta part) : "+fmt(recomptes.internetPart)+" - Cellulaire : "+fmt(recomptes.budget.cellulaire)+" - Assurance : "+fmt(recomptes.budget.assurance)+"</td></tr>";
+  html += "<tr><td>S5 Transport et épicerie (15 pts)</td><td>Transport : "+fmt(recomptes.budget.transport)+" - Nourriture utilisée dans la semaine (2 pers.) : "+fmt(recomptes.epicerieSemaineTotale)+" - Achats inscrits : "+fmt(recomptes.epicerieAchatsTotale)+" - Ta part du mois : "+fmt(recomptes.epicerieMoisPart)+"</td></tr>";
+  html += "<tr><td>S6 Budget et imprévu (10 pts)</td><td>Dépenses du mois : "+fmt(recomptes.depensesMois)+" - Solde : "+fmt(recomptes.solde)+" - Premier mois : "+fmt(recomptes.premierMois)+" - Année : "+fmt(recomptes.annee)+" - Imprévu no "+echapper(propre.s6.imprevu.numeroCarte||"")+" : "+fmt(propre.s6.imprevu.montant)+"</td></tr>";
+  html += "<tr><td>S7 Réflexion (10 pts)</td><td>Concepts cochés : "+(propre.s7.concepts||[]).length+" - "+echapper((propre.s7.concepts||[]).join(", "))+"</td></tr>";
+  html += "</tbody></table>";
+  html += "<div class='total-ligne grand'><span>Solde du mois</span><strong>"+fmt(recomptes.solde)+"</strong></div>";
+  // Ecarts
+  html += "<h3 style='font-size:24px;margin:16px 0 6px'>Écarts entre totaux stockés et totaux recomptés</h3>";
+  if(!stockes){ html += "<div class='drapeau erreur'>Aucun total stocké dans le fichier importé : impossible de comparer, les totaux recomptés seuls font foi.</div>"; }
+  else{
+    var cles = [["installation","Installation"],["depensesMois","Dépenses du mois"],["solde","Solde"],["premierMois","Premier mois"],["annee","Année"],["electriciteTotal","Électricité totale"],["electricitePart","Part d'électricité"],["epicerieSemaineTotale","Épicerie semaine totale"],["revenusMois","Revenus du mois"]];
+    var ecarts = [];
+    cles.forEach(function(pair){ var k=pair[0]; if(stockes[k]==null) return; if(Math.abs(M.round2(M.num(stockes[k])) - M.round2(recomptes[k])) > 0.01) ecarts.push(pair[1]+" : stocké "+fmt(M.num(stockes[k]))+", recompté "+fmt(recomptes[k])); });
+    if(ecarts.length===0) html += "<div class='okbox'>Aucun écart : tous les totaux stockés correspondent aux totaux recomptés au centime près.</div>";
+    else ecarts.forEach(function(e){ html += "<div class='drapeau erreur'>Écart - "+echapper(e)+"</div>"; });
+  }
+  // Drapeaux
+  var drapeaux = M.analyserDrapeaux(propre, recomptes, stockes);
+  html += "<h3 style='font-size:24px;margin:16px 0 6px'>Drapeaux automatiques ("+drapeaux.length+")</h3>";
+  if(drapeaux.length===0) html += "<div class='okbox'>Aucun drapeau.</div>";
+  else drapeaux.forEach(function(dr){ html += "<div class='drapeau "+(dr.niveau==="erreur"?"erreur":"")+"'>["+echapper(dr.niveau)+"] "+echapper(dr.code)+" - "+echapper(dr.message)+"</div>"; });
+  cont.innerHTML = html;
+}
+// Verrou du mode correction : le code enseignant n'apparait jamais en clair,
+// seule son empreinte SHA-256 est presente dans le fichier.
+function sha256Hex(chaine){
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  function rr(x,n){ return (x>>>n)|(x<<(32-n)); }
+  var octets=[]; for(var i=0;i<chaine.length;i++){ var c=chaine.charCodeAt(i); if(c>127) return ""; octets.push(c); }
+  var longueurBits=octets.length*8;
+  octets.push(0x80);
+  while(octets.length%64!==56) octets.push(0);
+  octets.push(0,0,0,0,(longueurBits>>>24)&255,(longueurBits>>>16)&255,(longueurBits>>>8)&255,longueurBits&255);
+  var w=new Array(64);
+  for(var bloc=0;bloc<octets.length;bloc+=64){
+    for(var t=0;t<16;t++) w[t]=((octets[bloc+t*4]<<24)|(octets[bloc+t*4+1]<<16)|(octets[bloc+t*4+2]<<8)|octets[bloc+t*4+3])|0;
+    for(t=16;t<64;t++){
+      var s0=rr(w[t-15],7)^rr(w[t-15],18)^(w[t-15]>>>3);
+      var s1=rr(w[t-2],17)^rr(w[t-2],19)^(w[t-2]>>>10);
+      w[t]=(w[t-16]+s0+w[t-7]+s1)|0;
+    }
+    var a=H[0],b=H[1],cc=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(t=0;t<64;t++){
+      var S1=rr(e,6)^rr(e,11)^rr(e,25);
+      var ch=(e&f)^(~e&g);
+      var temp1=(h+S1+ch+K[t]+w[t])|0;
+      var S0=rr(a,2)^rr(a,13)^rr(a,22);
+      var maj=(a&b)^(a&cc)^(b&cc);
+      var temp2=(S0+maj)|0;
+      h=g; g=f; f=e; e=(d+temp1)|0; d=cc; cc=b; b=a; a=(temp1+temp2)|0;
+    }
+    H[0]=(H[0]+a)|0; H[1]=(H[1]+b)|0; H[2]=(H[2]+cc)|0; H[3]=(H[3]+d)|0; H[4]=(H[4]+e)|0; H[5]=(H[5]+f)|0; H[6]=(H[6]+g)|0; H[7]=(H[7]+h)|0;
+  }
+  return H.map(function(x){ return ("00000000"+(x>>>0).toString(16)).slice(-8); }).join("");
+}
+var CODE_ENSEIGNANT_HASH = "5c0b1ae7ef3b0e1552cd215596a4449a8bcd5d060f18511da8e63b87f67c11f6";
+var correctionDeverrouillee = false;
+var essaisCode = 0;
+var blocageCodeJusqua = 0;
+function barrerCorrection(){
+  correctionDeverrouillee = false;
+  var p = el("panneau-correction"); if(p) p.style.display = "none";
+  var v = el("verrou-correction"); if(v) v.classList.remove("cache");
+  var c = el("contenu-correction"); if(c) c.classList.add("cache");
+  var champ = el("code-enseignant"); if(champ) champ.value = "";
+  var res = el("resultat-correction"); if(res) res.innerHTML = "";
+  var msg = el("verrou-message"); if(msg) msg.innerHTML = "";
+}
+function tenterDeverrouillage(){
+  var msg = el("verrou-message");
+  var maintenant = Date.now();
+  if(maintenant < blocageCodeJusqua){
+    msg.innerHTML = "<div class='drapeau erreur'>Trop d'essais. Attends " + Math.ceil((blocageCodeJusqua - maintenant) / 1000) + " secondes avant de réessayer.</div>";
+    return;
+  }
+  var code = el("code-enseignant").value.trim();
+  if(code && sha256Hex(code) === CODE_ENSEIGNANT_HASH){
+    correctionDeverrouillee = true;
+    essaisCode = 0;
+    el("code-enseignant").value = "";
+    el("verrou-correction").classList.add("cache");
+    el("contenu-correction").classList.remove("cache");
+    msg.innerHTML = "";
+  } else {
+    essaisCode++;
+    el("code-enseignant").value = "";
+    if(essaisCode >= 5){
+      blocageCodeJusqua = maintenant + 60000;
+      essaisCode = 0;
+      msg.innerHTML = "<div class='drapeau erreur'>Code incorrect. Trop d'essais : réessaie dans 60 secondes.</div>";
+    } else {
+      msg.innerHTML = "<div class='drapeau erreur'>Code incorrect. Essai " + essaisCode + " de 5.</div>";
+    }
+  }
+}
+// Initialisation
+(function init(){
+  var sel = el("eleve-profil");
+  PROFILS_DATA.forEach(function(p){ var o=document.createElement("option"); o.value=p.numero; o.textContent = p.numero + " - " + p.prenom; sel.appendChild(o); });
+  chargerDernier();
+  construireS2(); construireS3(); construireS5();
+  lierChampsSimples();
+  remplirFormulaire();
+  majTout();
+  el("btn-exporter").addEventListener("click", function(){ majTout(); exporterDossier(); });
+  el("fichier-import").addEventListener("change", function(ev){
+    var f = ev.target.files[0]; if(!f) return;
+    var lecteur = new FileReader();
+    lecteur.onload = function(){ try{ var d = JSON.parse(lecteur.result); dossier = fusionner(dossierVide(), d); construireS2(); construireS3(); construireS5(); lierChampsSimplesMenus(); remplirFormulaire(); majTout(); alert("Dossier importé."); }catch(e){ alert("Fichier invalide : " + e.message); } };
+    lecteur.readAsText(f); ev.target.value="";
+  });
+  function lierChampsSimplesMenus(){ /* les zones dynamiques sont reliees a leur construction */ }
+  el("btn-effacer").addEventListener("click", function(){
+    if(!confirm("Tout effacer ? Cette action vide le formulaire et la sauvegarde automatique de ce dossier.")) return;
+    try{ var cle = cleSauvegarde(); localStorage.removeItem(cle); localStorage.removeItem("partir-appart-dernier"); }catch(e){}
+    dossier = dossierVide(); construireS2(); construireS3(); construireS5(); remplirFormulaire(); majTout();
+  });
+  el("btn-mode-correction").addEventListener("click", function(){ var p = el("panneau-correction"); p.style.display="block"; if(p.scrollIntoView) p.scrollIntoView({behavior:"smooth"}); if(!correctionDeverrouillee){ var champ = el("code-enseignant"); if(champ) champ.focus(); } });
+  el("btn-deverrouiller").addEventListener("click", tenterDeverrouillage);
+  el("code-enseignant").addEventListener("keydown", function(ev){ if(ev.key === "Enter"){ ev.preventDefault(); tenterDeverrouillage(); } });
+  el("btn-annuler-correction").addEventListener("click", barrerCorrection);
+  el("btn-fermer-correction").addEventListener("click", barrerCorrection);
+  el("fichier-correction").addEventListener("change", function(ev){
+    if(!correctionDeverrouillee) return;
+    var f = ev.target.files[0]; if(!f) return;
+    var lecteur = new FileReader();
+    lecteur.onload = function(){ try{ var d = JSON.parse(lecteur.result); afficherCorrection(d); }catch(e){ el("resultat-correction").innerHTML = "<div class='drapeau erreur'>Fichier invalide : "+echapper(e.message)+"</div>"; } };
+    lecteur.readAsText(f); ev.target.value="";
+  });
+})();
+</script>
+</body>
+</html>
